@@ -2,8 +2,12 @@ import healpy as hp
 import numpy as np
 import argparse
 from mpi4py import MPI
-from utils import (
+from  inpainters  import deep_prior_inpainter as dp
+from utils import utils
+
+from  utils import (
     setup_input,
+    set_header,
     f2h,
     rd2tp
 
@@ -11,12 +15,10 @@ from utils import (
 
 
 
-from deep_prior_inpainter import DeepPrior
-
 class HoleInpainter() :
     def __init__ (self, method , Npix = 128) :
         if method =='DeepPrior':
-            self.Inpainter = DeepPrior ( (Npix, Npix, 1))
+            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1))
             self.epochs = 2#000
             Adaopt="Adam"
             self.Inpainter.compile(optimizer=Adaopt )
@@ -32,12 +34,11 @@ class HoleInpainter() :
         return p
 
 def main(args):
-
     comm    = MPI.COMM_WORLD
     rank    = comm.Get_rank()
     nprocs  = comm.Get_size()
-    Npix = 128
-    """
+    Npix = 128 #This is hard-coded because of the architecture of both CNN
+
     glob_ra,glob_dec, _  = np.loadtxt(args.ptsourcefile ,unpack=True)
 
     localsize = glob_ra.shape[0]/nprocs  ## WARNING:  this MUST  evenly divide!!!!!!
@@ -48,26 +49,21 @@ def main(args):
 
     if args.pol :
         keys = ['T', 'Q', 'U']
-        sima = hp.read_map(args.hpxmap  ,field=[0,1,2] )
+        inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] )
     else:
         keys = ['T' ]
-        sima = [hp.read_map( args.hpxmap) ]
+        inputmap = [hp.read_map( args.hpxmap) ]
 
 
-    mask = np.zeros_like (sima[0] )
+    mask = np.zeros_like (inputmap[0] )
 
-    nside = hp.get_nside(sima)
-    """
+    nside = hp.get_nside(inputmap)
+
     size_im = {2048: 192.  ,4096 : 64. }
     beam =np.deg2rad( args.beamsize /60.)
 
     Inpainter =  HoleInpainter (args.method)
-    for i in range(1):
-        fname = args.stackfile
-        maskdmap, noisemap ,minval, maxval = setup_input( fname)
 
-        predicted = Inpainter (maskdmap, noisemap, minval,maxval )
-    """
     for i in range(Nstacks):
 
         sizepatch = size_im[nside]*1. /Npix/60.
@@ -76,7 +72,7 @@ def main(args):
         vec          = hp.ang2vec( theta = tht,phi =phi )
         pixs         = hp.query_disc(nside,vec,3* beam)
         mask [pixs]  = 1.
-        for k,j  in  zip(keys, range(len(sima)) ) :
+        for k,j  in  zip(keys, range(len(inputmap)) ) :
     		fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
 
     		maskdmap, noisemap ,minval, maxval = setup_input( fname)
@@ -84,19 +80,18 @@ def main(args):
 
  	        np.save(args.stackfile+k+'_{:.5f}_{:.5f}_inpainted.npy'.format(ra[i],dec[i] ), predicted)
   	    	maskmap =  f2h (predicted ,header, nside )
-	        sima[j][pixs] = inpaintedmap[pixs]
+	        inputmap[j][pixs] = inpaintedmap[pixs]
 		break
 
-        """
 
-    maps  = np.concatenate(sima).reshape(hp.nside2npix(nside), len(sima))
+    maps  = np.concatenate(inputmap).reshape(hp.nside2npix(nside), len(inputmap))
     reducmaps = np.zeros_like(maps)
     globmask= np.zeros_like(mask)
 
     comm.Allreduce(maps, reducmaps, op=MPI.SUM)
     comm.Allreduce(mask, globmask , op=MPI.SUM)
     if rank ==0 :
-        hp.write_map(args.inpaintedmap , [sima[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(sima))]  )
+        hp.write_map(args.inpaintedmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]  )
 
     comm.Barrier()
 

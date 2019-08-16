@@ -1,13 +1,12 @@
-import  pylab as pl
 import tensorflow as tf
 from keras import layers
 
 import keras.backend as K
 from keras.layers import (
-        Input,Conv2D,MaxPooling2D,UpSampling2D,
+        Input,Conv2D,UpSampling2D,
         Dense ,Flatten,Reshape, ZeroPadding2D ,
         LeakyReLU,Masking
-) 
+)
 
 from keras.models import Model
 from keras.initializers import glorot_uniform
