@@ -58,7 +58,7 @@ def main(args):
         	np.save(args.stackfile+k+'_{:.5f}_{:.5f}'.format(ra[i],dec[i])  , h2f(inputmap[j] ,header) )
 
         if i %100 ==0  and rank ==0  :
-	    	print("Stacking %d source "%i   )
+            print("Stacking %d source "%i   )
 
 
     comm.Barrier()
@@ -68,18 +68,17 @@ def main(args):
         globT = np.zeros( (Nstacks, 128,128))
         mglobT = np.zeros( (Nstacks, 128,128))
         if args.pol :
-        	globQ = np.zeros( (Nstacks, 128,128))
-        	globU = np.zeros( (Nstacks, 128,128))
-        	mglobQ = np.zeros( (Nstacks, 128,128))
-	        mglobU = np.zeros( (Nstacks, 128,128))
-
+            globQ = np.zeros( (Nstacks, 128,128))
+            globU = np.zeros( (Nstacks, 128,128))
+            mglobQ = np.zeros( (Nstacks, 128,128))
+            mglobU = np.zeros( (Nstacks, 128,128))
         for i in range(Nstacks):
             globT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] ))
             mglobT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] ))
             if args.pol:
                 globQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] ))
-            	mglobQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] ))
-            	globU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] ))
+                mglobQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] ))
+                globU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] ))
                 mglobU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] ))
         np.save(args.stackfile+'T_masked',  mglobT)
         np.save(args.stackfile+'T' , globT)

@@ -73,29 +73,29 @@ def main(args):
         pixs         = hp.query_disc(nside,vec,3* beam)
         mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(inputmap)) ) :
-    		fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
+            fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
 
-    		maskdmap, noisemap ,minval, maxval = setup_input( fname)
-    		predicted = Inpainter (maskdmap, noisemap, minval,maxval )
+            maskdmap, noisemap ,minval, maxval = setup_input( fname)
+            predicted = Inpainter (maskdmap, noisemap, minval,maxval )
 
- 	        np.save(args.stackfile+k+'_{:.5f}_{:.5f}_inpainted.npy'.format(ra[i],dec[i] ), predicted)
-  	    	maskmap =  f2h (predicted ,header, nside )
-	        inputmap[j][pixs] = inpaintedmap[pixs]
-		break
+            np.save(args.stackfile+k+'_{:.5f}_{:.5f}_inpainted.npy'.format(ra[i],dec[i] ), predicted)
+            maskmap =  f2h (predicted ,header, nside )
+            inputmap[j][pixs] = inpaintedmap[pixs]
+            break
 
 
-    maps  = np.concatenate(inputmap).reshape(hp.nside2npix(nside), len(inputmap))
-    reducmaps = np.zeros_like(maps)
-    globmask= np.zeros_like(mask)
+        maps  = np.concatenate(inputmap).reshape(hp.nside2npix(nside), len(inputmap))
+        reducmaps = np.zeros_like(maps)
+        globmask= np.zeros_like(mask)
 
-    comm.Allreduce(maps, reducmaps, op=MPI.SUM)
-    comm.Allreduce(mask, globmask , op=MPI.SUM)
-    if rank ==0 :
-        hp.write_map(args.inpaintedmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]  )
+        comm.Allreduce(maps, reducmaps, op=MPI.SUM)
+        comm.Allreduce(mask, globmask , op=MPI.SUM)
+        if rank ==0 :
+            hp.write_map(args.inpaintedmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]  )
 
-    comm.Barrier()
+        comm.Barrier()
 
-    comm.Disconnect
+        comm.Disconnect
 
 
 
