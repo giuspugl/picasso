@@ -1,3 +1,16 @@
+
+#
+#
+#
+#
+#   date: 2019-08-20
+#   author: GIUSEPPE PUGLISI
+#   python3.6
+#   Copyright (C) 2019   Giuseppe Puglisi    gpuglisi@stanford.edu
+#
+
+
+
 import numpy as np
 import tensorflow as tf
 import neuralgym as ng

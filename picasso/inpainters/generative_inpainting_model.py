@@ -1,4 +1,15 @@
-""" common model for DCGAN """
+#
+#
+#    This module has been slightly modified and  imported from
+#       https://github.com/JiahuiYu/generative_inpainting
+#
+#
+#   date: 2019-08-20
+#   author:  Jiahui Yu
+#   python3.6
+#   Copyright (C) 2018
+#
+
 import logging
 
 import cv2

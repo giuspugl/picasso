@@ -1,3 +1,16 @@
+#
+#
+#    This module has been slightly modified and  imported from
+#       https://github.com/JiahuiYu/generative_inpainting
+#
+#
+#   date: 2019-08-20
+#   author:  Jiahui Yu
+#   python3.6
+#   Copyright (C) 2018
+#
+
+
 import logging
 
 import cv2
@@ -502,13 +515,3 @@ def image2edge(image):
         out.append(img)
     return np.float32(np.uint8(out))
 
-"""
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--imageA', default='', type=str, help='Image A as background patches to reconstruct image B.')
-    parser.add_argument('--imageB', default='', type=str, help='Image B is reconstructed with image A.')
-    parser.add_argument('--imageOut', default='result.png', type=str, help='Image B is reconstructed with image A.')
-    args = parser.parse_args()
-    test_contextual_attention(args)
-"""
