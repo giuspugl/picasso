@@ -7,7 +7,7 @@ from keras.layers import (
         Dense ,Flatten,Reshape, ZeroPadding2D ,
         LeakyReLU,Masking
 )
-
+import numpy as np
 from keras.models import Model
 from keras.initializers import glorot_uniform
 from keras.optimizers import RMSprop, Adam
@@ -68,17 +68,20 @@ class   DeepPrior ():
         y2= tf.boolean_mask(y_pred,Kmask)
         return   K.sqrt(K.sum(K.square(   y2   ), axis=-1))  /K.sqrt(K.sum(K.square(   y1 ), axis=-1))
 
-    def __init__(self, input_shape,  nd =[16,32,64,128  ,128  ,128] ):
-
+    def __init__(self,
+        input_shape,
+        nd =[16,32,64,128  ,128  ,128],
+        verbose = False  ):
+        self.verbose=verbose
         X_input =  Input(   input_shape )
         nu=nd[::-1]
         kd =[3] * len(nu)
         ku = [5]*len(nu)
         X= self.downsampling_block(X_input, kd[0], nd[0], 0, 'd')
         #encoder block
-        for  i in xrange(1, len(nu)):
+        for  i in  range(1, len(nu)):
             X= self.downsampling_block(X , kd[i], nd[i], i, 'd')
-        for  i in xrange( len(nu)):
+        for  i in  range( len(nu)):
             X= self.upsampling_block(X , ku[i], nu[i], i, 'u')
 
         X = UpSampling2D((2,2),interpolation='nearest', name='upsample_last')(X)
@@ -105,8 +108,21 @@ class   DeepPrior ():
         self.accuracy =  train_out.history['my_accuracy']
     def evaluate (self, z, X) :
         self.preds =  self.model.evaluate(x=z, y=X)
-        print ("Loss = " + str(self.preds[0]))
-        print ("Test Accuracy = " + str(self.preds[1]))
+        if self.verbose :
+            print ("Loss = " + str(self.preds[0]))
+            print ("Test Accuracy = " + str(self.preds[1]))
 
     def predict(self, z ) :
          return self.model.predict(z)
+
+    def setup_input(self,fname_masked  , seed= 123456789 ):
+        maskdmap=np.load(fname_masked)
+        holemask = np.ma.masked_not_equal(maskdmap,0) .mask
+        maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
+        maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
+        maskdmap = (maskdmap -minval) / (maxval - minval)
+        randstate= np.random.RandomState(seed)
+        noisemap =     randstate.uniform( size=maskdmap.shape )
+        self.X = maskdmap; self.Z = noisemap ;
+        self.min = minval;  self.max = maxval
+        pass
