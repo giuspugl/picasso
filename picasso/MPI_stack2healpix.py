@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 from mpi4py import MPI
 from  inpainters  import deep_prior_inpainter as dp
+from  inpainters  import nn_inpainter as nn
 from utils import utils
 
 from  utils import (
@@ -24,6 +25,8 @@ class HoleInpainter() :
             self.Inpainter.compile(optimizer=Adaopt )
         elif method=='WGAN' :
             self.Inpainter =None
+        #elif method=='NN' :
+            #self.Inpainter = nn.NN_fill(())
         pass
 
     def __call__(self, X ,Z, min,max ) :
