@@ -18,7 +18,7 @@ from mpi4py import MPI
 from  inpainters  import (
   deep_prior_inpainter as dp ,
   contextual_attention_gan    as ca,
-  nn_inpainter as nn
+  nearest_neighbours_inpainter as nn,
   )
 
 
@@ -39,20 +39,25 @@ from  utils import (
 
 
 class HoleInpainter() :
-    def __init__ (self, method , Npix = 128, modeldir = None, verbose= False  ) :
-        if method =='Deep-Prior':
-            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1), verbose = verbose )
-            self.epochs = 2#000
+    def __init__ (self, args , Npix = 128, ) :
+        if args.method =='Deep-Prior':
+
+            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1),
+                                            verbose = args.debug  )
+            self.epochs =args.dp_epochs
             Adaopt="Adam"
             self.Inpainter.compile(optimizer=Adaopt )
             self.exec  = self.DPinpaint
-            
-        elif method=='Contextual-Attention' :
-            self.Inpainter = ca.ContextualAttention( modeldir =modeldir , verbose = verbose )
+
+        elif args.method=='Contextual-Attention' :
+            self.Inpainter = ca.ContextualAttention( modeldir =args.checkpoint_dir
+                        , verbose = args.debug  )
             self.exec  = self.GANinpaint
-        elif method=='NN' :
-            self.Inpainter = nn.NN_fill(())
- 
+        elif args.method=='Nearest-Neighbours' :
+            self.Inpainter = nn.NearestNeighbours(verbose = args.debug,
+                                Niters =args.nn_iters )
+            self.exec  = self.NNinpaint
+
         pass
 
 
@@ -84,6 +89,8 @@ class HoleInpainter() :
 
         return  p
 
+    def NNinpaint  (self  ) :
+         return  self.Inpainter.predict ( )
 
 def main(args):
     comm    = MPI.COMM_WORLD
@@ -114,9 +121,7 @@ def main(args):
     size_im = {2048: 192.  ,4096 : 64., 32 :360. }
     beam =np.deg2rad( args.beamsize /60.)
 
-    Inpainter =  HoleInpainter (args.method,
-                    modeldir = args.checkpoint_dir,
-                    verbose  =args.debug )
+    Inpainter =  HoleInpainter (args , Npix=Npix  )
 
     for i in range(Nstacks):
 
@@ -163,6 +168,10 @@ if __name__=="__main__":
 	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention'. ")
 	parser.add_argument("--pol", action="store_true" , default=False )
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
+	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
+	parser.add_argument('--nn-iters' , dest = 'nn_iters', type= np.int, default = 100 )
+
 	parser.add_argument('--debug', default=False , action='store_true')
+
 	args = parser.parse_args()
 	main( args)

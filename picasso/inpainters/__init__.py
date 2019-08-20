@@ -7,9 +7,8 @@
 
 # These are simply namespace imports for convenience.
 
-from .deep_prior_inpainter import  *
- 
-from .nn_inpainter import *
- 
+from .deep_prior_inpainter import  DeepPrior
+
+from .nearest_neighbours_inpainter import  NearestNeighbours
+
 from .generative_inpainting_model  import InpaintCAModel
- 

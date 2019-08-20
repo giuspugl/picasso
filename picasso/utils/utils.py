@@ -1,3 +1,15 @@
+#
+#
+#
+#
+#   date: 2019-08-20
+#   author: GIUSEPPE PUGLISI
+#   python3.6
+#   Copyright (C) 2019   Giuseppe Puglisi    gpuglisi@stanford.edu
+#
+
+
+
 import reproject
 import numpy as np
 import astropy.io.fits as fits
