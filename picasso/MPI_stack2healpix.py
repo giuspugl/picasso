@@ -14,10 +14,13 @@ import numpy as np
 import argparse
 from mpi4py import MPI
 
+
 from  inpainters  import (
   deep_prior_inpainter as dp ,
   contextual_attention_gan    as ca,
+  nn_inpainter as nn
   )
+
 
 from utils import utils
 
@@ -43,10 +46,13 @@ class HoleInpainter() :
             Adaopt="Adam"
             self.Inpainter.compile(optimizer=Adaopt )
             self.exec  = self.DPinpaint
+            
         elif method=='Contextual-Attention' :
             self.Inpainter = ca.ContextualAttention( modeldir =modeldir , verbose = verbose )
             self.exec  = self.GANinpaint
-
+        elif method=='NN' :
+            self.Inpainter = nn.NN_fill(())
+ 
         pass
 
 
