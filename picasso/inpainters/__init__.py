@@ -8,5 +8,8 @@
 # These are simply namespace imports for convenience.
 
 from .deep_prior_inpainter import  *
+ 
 from .nn_inpainter import *
-
+ 
+from .generative_inpainting_model  import InpaintCAModel
+ 

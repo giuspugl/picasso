@@ -57,14 +57,21 @@ def set_header(ra,dec, size_patch ,Npix=128 ):
     return hdr
 
 
+def numpy2png (arr ):
+    image  = np.uint8( 255 *  arr )
+    # replicate image to the 3 channels
+    image = image [:,:,None] * np.ones(3, dtype=int)[None, None, :]
+    return image
 
-
-def setup_input ( fname_masked, seed= 123456789 ):
+def setup_input ( fname_masked, seed= 123456789, method = 'Deep-Prior'  ):
     maskdmap=np.load(fname_masked)
     holemask = np.ma.masked_not_equal(maskdmap,0) .mask
     maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
     maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
     maskdmap = (maskdmap -minval) / (maxval - minval)
-    randstate= np.random.RandomState(seed)
-    noisemap =     randstate.uniform( size=maskdmap.shape )
-    return maskdmap, noisemap ,minval, maxval
+    if  method =='Deep-Prior':
+        randstate= np.random.RandomState(seed)
+        noisemap =     randstate.uniform( size=maskdmap.shape )
+        return [ maskdmap, noisemap  , minval, maxval]
+    else :
+         return maskdmap,   minval, maxval

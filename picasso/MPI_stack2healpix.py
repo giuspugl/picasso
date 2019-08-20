@@ -1,50 +1,99 @@
+#
+#
+#
+#
+#   date: 2019-08-20
+#   author: GIUSEPPE PUGLISI
+#   python3.6
+#   Copyright (C) 2019   Giuseppe Puglisi    gpuglisi@stanford.edu
+#
+
+
 import healpy as hp
 import numpy as np
 import argparse
 from mpi4py import MPI
-from  inpainters  import deep_prior_inpainter as dp
-from  inpainters  import nn_inpainter as nn
+
+
+from  inpainters  import (
+  deep_prior_inpainter as dp ,
+  contextual_attention_gan    as ca,
+  nn_inpainter as nn
+  )
+
+
 from utils import utils
 
 from  utils import (
     setup_input,
     set_header,
     f2h,
-    rd2tp
+    rd2tp,
+    numpy2png
 
 )
 
 
 
+
+
+
 class HoleInpainter() :
-    def __init__ (self, method , Npix = 128) :
-        if method =='DeepPrior':
-            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1))
+    def __init__ (self, method , Npix = 128, modeldir = None, verbose= False  ) :
+        if method =='Deep-Prior':
+            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1), verbose = verbose )
             self.epochs = 2#000
             Adaopt="Adam"
             self.Inpainter.compile(optimizer=Adaopt )
-        elif method=='WGAN' :
-            self.Inpainter =None
-        #elif method=='NN' :
-            #self.Inpainter = nn.NN_fill(())
+            self.exec  = self.DPinpaint
+            
+        elif method=='Contextual-Attention' :
+            self.Inpainter = ca.ContextualAttention( modeldir =modeldir , verbose = verbose )
+            self.exec  = self.GANinpaint
+        elif method=='NN' :
+            self.Inpainter = nn.NN_fill(())
+ 
         pass
 
-    def __call__(self, X ,Z, min,max ) :
-        self.Inpainter.train(Z , X , epochs=self.epochs )
-        self.Inpainter.evaluate(Z,X)
+
+    def setup_input(self , fname ) :
+        return   self.Inpainter.setup_input( fname )
+
+
+
+    def rescale_back (self, v ) :
+        return  ( v* (self.Inpainter.max - self.Inpainter.min) +
+                    self.Inpainter.min )
+
+
+    def DPinpaint(self     ) :
+
+        self.Inpainter.train(self.Inpainter.Z , self.Inpainter.X , epochs=self.epochs )
+        self.Inpainter.evaluate(self.Inpainter.Z,self.Inpainter.X)
         # predict and rescale back
-        p = self.Inpainter.predict(Z) * (max - min) + min
+        p =   self.Inpainter.predict(self.Inpainter.Z)
+        p = self.rescale_back(p )
         return p
+
+    def GANinpaint  (self  ) :
+        image = numpy2png(self.Inpainter.X )
+        mask = numpy2png (1 - self.Inpainter.mask )
+
+        p = self.Inpainter.predict(image, mask )
+        p = self.rescale_back(p )
+
+        return  p
+
 
 def main(args):
     comm    = MPI.COMM_WORLD
     rank    = comm.Get_rank()
     nprocs  = comm.Get_size()
-    Npix = 128 #This is hard-coded because of the architecture of both CNN
+    Npix = 128 ## WARNING: This is hard-coded because of the architecture of both CNN
 
     glob_ra,glob_dec, _  = np.loadtxt(args.ptsourcefile ,unpack=True)
 
-    localsize = glob_ra.shape[0]/nprocs  ## WARNING:  this MUST  evenly divide!!!!!!
+    localsize =np.int_(  glob_ra.shape[0]/nprocs  ) ## WARNING:  this MUST  evenly divide!!!!!!
 
     ra =  glob_ra[slice( rank *localsize ,  (rank +1)* localsize)]
     dec =  glob_dec[slice( rank *localsize ,  (rank +1)* localsize)]
@@ -62,10 +111,12 @@ def main(args):
 
     nside = hp.get_nside(inputmap)
 
-    size_im = {2048: 192.  ,4096 : 64. }
+    size_im = {2048: 192.  ,4096 : 64., 32 :360. }
     beam =np.deg2rad( args.beamsize /60.)
 
-    Inpainter =  HoleInpainter (args.method)
+    Inpainter =  HoleInpainter (args.method,
+                    modeldir = args.checkpoint_dir,
+                    verbose  =args.debug )
 
     for i in range(Nstacks):
 
@@ -77,15 +128,15 @@ def main(args):
         mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(inputmap)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
+            fname = args.stackfile
 
-            maskdmap, noisemap ,minval, maxval = setup_input( fname)
-            predicted = Inpainter (maskdmap, noisemap, minval,maxval )
+            Inpainter.setup_input( fname  )
+            predicted = Inpainter.exec ()
 
             np.save(args.stackfile+k+'_{:.5f}_{:.5f}_inpainted.npy'.format(ra[i],dec[i] ), predicted)
             maskmap =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
-            break
-
+        break
 
         maps  = np.concatenate(inputmap).reshape(hp.nside2npix(nside), len(inputmap))
         reducmaps = np.zeros_like(maps)
@@ -109,7 +160,9 @@ if __name__=="__main__":
 	parser.add_argument("--stackfile", help='path to the file with stacked maps')
 	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')
 	parser.add_argument("--inpaintedmap", help='path to the inpainted HEALPIX map  ')
-	parser.add_argument("--method", help=" string of inpainting technique, can be 'DeepPrior', 'WGAN'. ")
+	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention'. ")
 	parser.add_argument("--pol", action="store_true" , default=False )
+	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
+	parser.add_argument('--debug', default=False , action='store_true')
 	args = parser.parse_args()
 	main( args)
