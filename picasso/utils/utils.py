@@ -3,7 +3,7 @@
 #
 #
 #   date: 2019-08-20
-#   author: GIUSEPPE PUGLISI
+#   author: YUUKI OMORI , GIUSEPPE PUGLISI
 #   python3.6
 #   Copyright (C) 2019   Giuseppe Puglisi    gpuglisi@stanford.edu
 #
