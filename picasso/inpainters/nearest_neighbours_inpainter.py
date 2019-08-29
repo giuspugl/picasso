@@ -14,9 +14,10 @@ import numpy as np
 
 
 class NearestNeighbours():
-	def __init__ (self,   verbose = False , Niters= 500  ) :
+	def __init__ (self, Npix ,   verbose = False , Niters= 500  ) :
 		self.verbose=  verbose
 		self.niter  = Niters
+		self.Npix =Npix
 
 		pass
 	def setup_input (self, fname_masked  )	 :
@@ -52,6 +53,7 @@ class NearestNeighbours():
 		p[np.logical_not( self.mask )] = np.mean(self.X*self.mask)
 		for i in range(self.niter):
 			for r,c in zip(x,y):
+				
 				try:
 					p[r,c] = p[(r-1):(r+2),(c-1):(c+2)].mean()
 				except IndexError:

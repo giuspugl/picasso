@@ -54,7 +54,7 @@ class HoleInpainter() :
                         , verbose = args.debug  )
             self.exec  = self.GANinpaint
         elif args.method=='Nearest-Neighbours' :
-            self.Inpainter = nn.NearestNeighbours(verbose = args.debug,
+            self.Inpainter = nn.NearestNeighbours(Npix =Npix,verbose = args.debug,
                                 Niters =args.nn_iters )
             self.exec  = self.NNinpaint
 
@@ -98,20 +98,28 @@ def main(args):
     nprocs  = comm.Get_size()
     Npix = 128 ## WARNING: This is hard-coded because of the architecture of both CNN
 
-    glob_ra,glob_dec, _  = np.loadtxt(args.ptsourcefile ,unpack=True)
+    glob_ra,glob_dec   = np.loadtxt(args.ptsourcefile ,unpack=True)
+    localsize = np.int_(glob_ra.shape[0]/nprocs)
+    remainder = glob_ra.shape[0]% nprocs
+    if (rank < remainder) :
+    #  The first 'remainder' ranks get 'count + 1' tasks each
+        start = np.int_(rank * (localsize  + 1))
+        stop =np.int_(  start + localsize +1  )
+    else:
+    # The remaining 'size - remainder' ranks get 'count' task each
+        start = np.int_(rank * localsize + remainder  )
+        stop =np.int_(  start + (localsize  )   )
 
-    localsize =np.int_(  glob_ra.shape[0]/nprocs  ) ## WARNING:  this MUST  evenly divide!!!!!!
-
-    ra =  glob_ra[slice( rank *localsize ,  (rank +1)* localsize)]
-    dec =  glob_dec[slice( rank *localsize ,  (rank +1)* localsize)]
+    ra =  glob_ra[slice( start , stop )]
+    dec =  glob_dec[slice( start , stop )]
     Nstacks= ra.shape [0]
 
     if args.pol :
         keys = ['T', 'Q', 'U']
-        inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] )
+        inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] ,verbose=args.debug)
     else:
         keys = ['T' ]
-        inputmap = [hp.read_map( args.hpxmap) ]
+        inputmap = [hp.read_map( args.hpxmap, verbose=args.debug) ]
 
 
     mask = np.zeros_like (inputmap[0] )
@@ -133,28 +141,29 @@ def main(args):
         mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(inputmap)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-            fname = args.stackfile
+            fname = args.stackfile+k+'_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] )
 
             Inpainter.setup_input( fname  )
             predicted = Inpainter.exec ()
 
             np.save(args.stackfile+k+'_{:.5f}_{:.5f}_inpainted.npy'.format(ra[i],dec[i] ), predicted)
-            maskmap =  f2h (predicted ,header, nside )
+
+
+            inpaintedmap =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
         break
+    """
+    maps  = np.concatenate(inputmap).reshape(hp.nside2npix(nside), len(inputmap))
+    reducmaps = np.zeros_like(maps)
+    globmask= np.zeros_like(mask)
+    comm.Allreduce(maps*mask , reducmaps, op=MPI.SUM)
+    comm.Allreduce(mask, globmask , op=MPI.SUM)
+    if rank ==0 :
+        hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]    )
+    """
+    comm.Barrier()
 
-        maps  = np.concatenate(inputmap).reshape(hp.nside2npix(nside), len(inputmap))
-        reducmaps = np.zeros_like(maps)
-        globmask= np.zeros_like(mask)
-
-        comm.Allreduce(maps, reducmaps, op=MPI.SUM)
-        comm.Allreduce(mask, globmask , op=MPI.SUM)
-        if rank ==0 :
-            hp.write_map(args.inpaintedmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]  )
-
-        comm.Barrier()
-
-        comm.Disconnect
+    comm.Disconnect
 
 
 
@@ -164,12 +173,12 @@ if __name__=="__main__":
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
 	parser.add_argument("--stackfile", help='path to the file with stacked maps')
 	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')
-	parser.add_argument("--inpaintedmap", help='path to the inpainted HEALPIX map  ')
-	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention'. ")
+	parser.add_argument("--outputmap", help='path and name  to the inpainted HEALPIX map  ')
+	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention', 'Nearest-Neighbours'. ")
 	parser.add_argument("--pol", action="store_true" , default=False )
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
-	parser.add_argument('--nn-iters' , dest = 'nn_iters', type= np.int, default = 100 )
+	parser.add_argument('--nearest-neighbours-iters' , dest = 'nn_iters', type= np.int, default = 100 )
 
 	parser.add_argument('--debug', default=False , action='store_true')
 

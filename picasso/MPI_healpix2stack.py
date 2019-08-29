@@ -31,12 +31,21 @@ def main(args):
     comm    = MPI.COMM_WORLD
     rank    = comm.Get_rank()
     nprocs  = comm.Get_size()
-    glob_ra,glob_dec, _  = np.loadtxt(args.ptsourcefile ,unpack=True)
+    glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)
 
-    localsize = glob_ra.shape[0]/nprocs  ## WARNING:  this MUST  evenly divide!!!!!!
+    localsize = np.int_(glob_ra.shape[0]/nprocs)
+    remainder = glob_ra.shape[0]% nprocs
+    if (rank < remainder) :
+    #  The first 'remainder' ranks get 'count + 1' tasks each
+        start = np.int_(rank * (localsize  + 1))
+        stop =np.int_(  start + localsize +1  )
+    else:
+    # The remaining 'size - remainder' ranks get 'count' task each
+        start = np.int_(rank * localsize + remainder  )
+        stop =np.int_(  start + (localsize  )   )
 
-    ra =  glob_ra[slice( rank *localsize ,  (rank +1)* localsize)]
-    dec =  glob_dec[slice( rank *localsize ,  (rank +1)* localsize)]
+    ra =  glob_ra[slice( start , stop )]
+    dec =  glob_dec[slice( start , stop )]
 
     Nstacks= ra.shape [0]
     Npix = 128 #This is hard-coded because of the architecture of both CNN
@@ -109,6 +118,7 @@ if __name__=="__main__":
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
 	parser.add_argument("--stackfile", help='path to the file with stacked maps')
+	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')
 	parser.add_argument("--pol", action="store_true" , default=False )
 	args = parser.parse_args()
 	main( args)
