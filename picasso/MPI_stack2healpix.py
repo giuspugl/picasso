@@ -54,8 +54,7 @@ class HoleInpainter() :
                         , verbose = args.debug  )
             self.exec  = self.GANinpaint
         elif args.method=='Nearest-Neighbours' :
-            self.Inpainter = nn.NearestNeighbours(Npix =Npix,verbose = args.debug,
-                                Niters =args.nn_iters )
+            self.Inpainter = nn.NearestNeighbours(verbose = args.debug, Npix=Npix  )
             self.exec  = self.NNinpaint
 
         pass
@@ -131,8 +130,8 @@ def main(args):
 
     Inpainter =  HoleInpainter (args , Npix=Npix  )
 
-    for i in range(Nstacks):
 
+    for i in range(Nstacks):
         sizepatch = size_im[nside]*1. /Npix/60.
         header       = set_header(ra[i],dec[i], sizepatch )
         tht,phi      = rd2tp(ra[i],dec[i])
@@ -141,7 +140,7 @@ def main(args):
         mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(inputmap)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-            fname = args.stackfile+k+'_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] )
+
 
             Inpainter.setup_input( fname  )
             predicted = Inpainter.exec ()
@@ -151,16 +150,17 @@ def main(args):
 
             inpaintedmap =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
-        break
-    """
-    maps  = np.concatenate(inputmap).reshape(hp.nside2npix(nside), len(inputmap))
+
+        if i ==0:  break
+
+    maps  = np.concatenate(inputmap*mask ).reshape(hp.nside2npix(nside), len(inputmap))
     reducmaps = np.zeros_like(maps)
     globmask= np.zeros_like(mask)
-    comm.Allreduce(maps*mask , reducmaps, op=MPI.SUM)
+    comm.Allreduce(maps , reducmaps, op=MPI.SUM)
     comm.Allreduce(mask, globmask , op=MPI.SUM)
     if rank ==0 :
-        hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]    )
-    """
+        hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))] , overwrite=args.overwrite    )
+
     comm.Barrier()
 
     comm.Disconnect
@@ -179,6 +179,7 @@ if __name__=="__main__":
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
 	parser.add_argument('--nearest-neighbours-iters' , dest = 'nn_iters', type= np.int, default = 100 )
+	parser.add_argument('--overwrite', default=False , action='store_true')
 
 	parser.add_argument('--debug', default=False , action='store_true')
 
