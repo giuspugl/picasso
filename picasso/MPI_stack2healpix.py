@@ -52,6 +52,7 @@ class HoleInpainter() :
         elif args.method=='Contextual-Attention' :
             self.Inpainter = ca.ContextualAttention( modeldir =args.checkpoint_dir
                         , verbose = args.debug  )
+
             self.exec  = self.GANinpaint
         elif args.method=='Nearest-Neighbours' :
             self.Inpainter = nn.NearestNeighbours(verbose = args.debug, Npix=Npix  )
@@ -70,12 +71,12 @@ class HoleInpainter() :
                     self.Inpainter.min )
 
 
-    def DPinpaint(self     ) :
+    def DPinpaint(self) :
 
         self.Inpainter.train(self.Inpainter.Z , self.Inpainter.X , epochs=self.epochs )
         self.Inpainter.evaluate(self.Inpainter.Z,self.Inpainter.X)
         # predict and rescale back
-        p =   self.Inpainter.predict(self.Inpainter.Z)
+        p =   self.Inpainter.predict()[0,:,:,0]
         p = self.rescale_back(p )
         return p
 
@@ -140,15 +141,11 @@ def main(args):
         mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(inputmap)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-
-
+            fname = args.stackfile
             Inpainter.setup_input( fname  )
             predicted = Inpainter.exec ()
-
-            np.save(args.stackfile+k+'_{:.5f}_{:.5f}_inpainted.npy'.format(ra[i],dec[i] ), predicted)
-
-
-            inpaintedmap =  f2h (predicted ,header, nside )
+            np.save(args.stackfile+k+'_{:.5f}_{:.5f}{}.npy'.format(ra[i],dec[i],args.method ), predicted)
+            inpaintedmap, footprint =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
 
         if i ==0:  break
@@ -158,7 +155,7 @@ def main(args):
     globmask= np.zeros_like(mask)
     comm.Allreduce(maps , reducmaps, op=MPI.SUM)
     comm.Allreduce(mask, globmask , op=MPI.SUM)
-    if rank ==0 :
+    if rank ==0 and args.outputmap :
         hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))] , overwrite=args.overwrite    )
 
     comm.Barrier()

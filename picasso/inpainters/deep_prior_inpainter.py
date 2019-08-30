@@ -124,17 +124,23 @@ class   DeepPrior ():
             print ("Loss = " + str(self.preds[0]))
             print ("Test Accuracy = " + str(self.preds[1]))
 
-    def predict(self, z ) :
-         return self.model.predict(z)
+    def predict(self,) :
+        pred= self.model.predict(self.Z)
+        return pred
 
     def setup_input(self,fname_masked  , seed= 123456789 ):
         maskdmap=np.load(fname_masked)
-        holemask = np.ma.masked_not_equal(maskdmap,0) .mask
+        holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
+
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
-        maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
         maskdmap = (maskdmap -minval) / (maxval - minval)
+        maskdmap[np.logical_not( holemask)]=0.
+
+        maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
+
         randstate= np.random.RandomState(seed)
         noisemap =     randstate.uniform( size=maskdmap.shape )
         self.X = maskdmap; self.Z = noisemap ;
         self.min = minval;  self.max = maxval
+
         pass

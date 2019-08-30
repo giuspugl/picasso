@@ -27,7 +27,7 @@ def f2h(flat,target_header,nside,coord_in='C'):
     pr,footprint = reproject.reproject_to_healpix(
     (flat, target_header),coord_system_out='C', nside=nside ,
     order='nearest-neighbor', nested=False)
-    return pr
+    return pr, footprint 
 
 def rd2tp(ra,dec):
     """
