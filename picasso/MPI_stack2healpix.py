@@ -19,8 +19,9 @@ from  inpainters  import (
   deep_prior_inpainter as dp ,
   contextual_attention_gan    as ca,
   nearest_neighbours_inpainter as nn,
+  interfaces
   )
-
+from inpainters.interfaces  import HoleInpainter
 
 from utils import utils
 
@@ -34,63 +35,6 @@ from  utils import (
 )
 
 
-
-
-
-
-class HoleInpainter() :
-    def __init__ (self, args , Npix = 128, ) :
-        if args.method =='Deep-Prior':
-
-            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1),
-                                            verbose = args.debug  )
-            self.epochs =args.dp_epochs
-            Adaopt="Adam"
-            self.Inpainter.compile(optimizer=Adaopt )
-            self.exec  = self.DPinpaint
-
-        elif args.method=='Contextual-Attention' :
-            self.Inpainter = ca.ContextualAttention( modeldir =args.checkpoint_dir
-                        , verbose = args.debug  )
-
-            self.exec  = self.GANinpaint
-        elif args.method=='Nearest-Neighbours' :
-            self.Inpainter = nn.NearestNeighbours(verbose = args.debug, Npix=Npix  )
-            self.exec  = self.NNinpaint
-
-        pass
-
-
-    def setup_input(self , fname ) :
-        return   self.Inpainter.setup_input( fname )
-
-
-
-    def rescale_back (self, v ) :
-        return  ( v* (self.Inpainter.max - self.Inpainter.min) +
-                    self.Inpainter.min )
-
-
-    def DPinpaint(self) :
-
-        self.Inpainter.train(self.Inpainter.Z , self.Inpainter.X , epochs=self.epochs )
-        self.Inpainter.evaluate(self.Inpainter.Z,self.Inpainter.X)
-        # predict and rescale back
-        p =   self.Inpainter.predict()[0,:,:,0]
-        p = self.rescale_back(p )
-        return p
-
-    def GANinpaint  (self  ) :
-        image = numpy2png(self.Inpainter.X )
-        mask = numpy2png (1 - self.Inpainter.mask )
-
-        p = self.Inpainter.predict(image, mask )
-        p = self.rescale_back(p )
-
-        return  p
-
-    def NNinpaint  (self  ) :
-         return  self.Inpainter.predict ( )
 
 def main(args):
     comm    = MPI.COMM_WORLD
@@ -143,7 +87,7 @@ def main(args):
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
             fname = args.stackfile
             Inpainter.setup_input( fname  )
-            predicted = Inpainter.exec ()
+            predicted = Inpainter ()
             np.save(args.stackfile+k+'_{:.5f}_{:.5f}{}.npy'.format(ra[i],dec[i],args.method ), predicted)
             inpaintedmap, footprint =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
@@ -182,3 +126,12 @@ if __name__=="__main__":
 
 	args = parser.parse_args()
 	main( args)
+
+
+"""
+mpirun -np 2  python picasso/picasso/MPI_stack2healpix.py  --stackfile ~/work/inpainting/T_99.89973_-51.09838_masked.npy \
+ --ptsourcefile ~/work/inpainting/FG_inpainting/pccs_857_planck.dat --outputmap test.fits \
+ --overwrite --debug --hpxmap  ~/work/heavy_maps/HFI_SkyMap_857-field-Int_2048_R3.00_full.fits  \
+ --beamsize 5 --deep-prior-epochs 10 --checkpoint_dir  /Users/peppe/work/inpainting/FG_inpainting/model_logs/cmb  \
+ --method Deep-Prior
+"""

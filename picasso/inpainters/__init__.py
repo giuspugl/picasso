@@ -12,3 +12,5 @@ from .deep_prior_inpainter import  DeepPrior
 from .nearest_neighbours_inpainter import  NearestNeighbours
 
 from .generative_inpainting_model  import InpaintCAModel
+
+from .interfaces import HoleInpainter
