@@ -21,7 +21,7 @@ class HoleInpainter() :
                         , verbose = args.debug  )
 
         elif args.method=='Nearest-Neighbours' :
-            self.Inpainter = nn.NearestNeighbours(verbose = args.debug, Npix=Npix  )
+            self.Inpainter = nn.NearestNeighbours(verbose = args.debug, Npix=Npix, args.nn_tol  )
         self.method = args.method
         pass
 

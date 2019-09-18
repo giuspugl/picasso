@@ -74,7 +74,7 @@ def main(args):
             Inpainter.setup_input( fname  )
             import time
             s= time.clock()
-            predicted = Inpainter(reuse )
+            predicted = Inpainter(reuse=reuse  )
             e = time.clock()
             print(e-s)
             np.save(args.stackfile+k+'_{:.5f}_{:.5f}{}.npy'.format(ra[i],dec[i],args.method ), predicted)
@@ -89,7 +89,7 @@ def main(args):
     if args.outputmap :
         hp.write_map(args.outputmap , [inputmap[k]  for k in range(len(inputmap))] , overwrite=args.overwrite    )
 
-        
+
 if __name__=="__main__":
 	parser = argparse.ArgumentParser( description="prepare training and testing dataset from a healpix map " )
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
@@ -101,7 +101,8 @@ if __name__=="__main__":
 	parser.add_argument("--pol", action="store_true" , default=False )
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
-	parser.add_argument('--nearest-neighbours-iters' , dest = 'nn_iters', type= np.int, default = 100 )
+	parser.add_argument('--nearest-neighbours-tolerance' , dest = 'nn_tol', type= np.float, default = 1e-8 )
+
 	parser.add_argument('--overwrite', default=False , action='store_true')
 
 	parser.add_argument('--debug', default=False , action='store_true')

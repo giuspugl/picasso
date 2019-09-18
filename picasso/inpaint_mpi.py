@@ -75,7 +75,7 @@ def main(args):
 
     Inpainter =  HoleInpainter (args , Npix=Npix  )
 
-
+    reuse = False
     for i in range(Nstacks):
         sizepatch = size_im[nside]*1. /Npix/60.
         header       = set_header(ra[i],dec[i], sizepatch )
@@ -88,10 +88,12 @@ def main(args):
 
             Inpainter.setup_input( fname  )
 
-            predicted = Inpainter ()
+            predicted = Inpainter (reuse =reuse )
             np.save(args.stackfile+k+'_{:.5f}_{:.5f}{}.npy'.format(ra[i],dec[i],args.method ), predicted)
             inpaintedmap, footprint =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
+            if not reuse : reuse =True
+
 
         if i ==1:  break
 
@@ -120,7 +122,7 @@ if __name__=="__main__":
 	parser.add_argument("--pol", action="store_true" , default=False )
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
-	parser.add_argument('--nearest-neighbours-iters' , dest = 'nn_iters', type= np.int, default = 100 )
+	parser.add_argument('--nearest-neighbours-tolerance' , dest = 'nn_tol', type= np.float, default = 1e-8 )
 	parser.add_argument('--overwrite', default=False , action='store_true')
 
 	parser.add_argument('--debug', default=False , action='store_true')

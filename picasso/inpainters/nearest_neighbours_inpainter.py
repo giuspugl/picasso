@@ -13,7 +13,6 @@ import numpy as np
 class NearestNeighbours():
     def __init__ (self, Npix =128 ,   verbose = False ,  tol=1e-8  ) :
         self.verbose=  verbose
-        self.niter  = 500
         self.Npix =Npix
         self.tol = tol
         pass
