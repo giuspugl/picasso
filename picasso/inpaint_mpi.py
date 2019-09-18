@@ -85,14 +85,15 @@ def main(args):
         mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(inputmap)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-            fname = args.stackfile
+
             Inpainter.setup_input( fname  )
+
             predicted = Inpainter ()
             np.save(args.stackfile+k+'_{:.5f}_{:.5f}{}.npy'.format(ra[i],dec[i],args.method ), predicted)
             inpaintedmap, footprint =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
 
-        if i ==0:  break
+        if i ==1:  break
 
     maps  = np.concatenate(inputmap*mask ).reshape(hp.nside2npix(nside), len(inputmap))
     reducmaps = np.zeros_like(maps)

@@ -72,12 +72,12 @@ class ContextualAttention(InpaintCAModel) :
         return outarray /255.
 
 
-    def predict (self, image , mask ):
+    def predict (self, image , mask , reuse  ):
 
         sess_config = tf.ConfigProto()
         sess_config.gpu_options.allow_growth = True
         with tf.Session(config=sess_config) as sess:
             input_image = self.preprocess_input( image, mask )
-            output   = self.build_server_graph(input_image)
+            output   = self.build_server_graph(input_image, reuse=reuse  )
             out = self.postprocess_output(output, sess )
             return out

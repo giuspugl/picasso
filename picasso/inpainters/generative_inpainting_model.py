@@ -56,7 +56,7 @@ class InpaintCAModel(Model):
 
         # two stage network
         cnum = 32
-        with tf.variable_scope(name, reuse=reuse), \
+        with tf.variable_scope(name, reuse=reuse ), \
                 arg_scope([gen_conv, gen_deconv],
                           training=training, padding=padding):
             # stage1

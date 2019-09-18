@@ -7,7 +7,7 @@ from utils import numpy2png
 
 
 class HoleInpainter() :
-    def __init__ (self, args , Npix = 128, ) :
+    def __init__ (self, args , Npix = 128 ) :
         if args.method =='Deep-Prior':
 
             self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1),
@@ -25,11 +25,11 @@ class HoleInpainter() :
         self.method = args.method
         pass
 
-    def __call__(self) :
+    def __call__(self, reuse ) :
         if self.method== 'Deep-Prior':
             return self.DPinpaint()
         elif self.method== 'Contextual-Attention':
-            return self.GANinpaint()
+            return self.GANinpaint(reuse=reuse )
         elif self.method== 'Nearest-Neighbours':
             return self.NNinpaint()
 
@@ -52,11 +52,11 @@ class HoleInpainter() :
         p = self.rescale_back(p )
         return p
 
-    def GANinpaint  (self  ) :
+    def GANinpaint  (self , reuse  ) :
         image = numpy2png(self.Inpainter.X )
         mask = numpy2png (1 - self.Inpainter.mask )
 
-        p = self.Inpainter.predict(image, mask )
+        p = self.Inpainter.predict(image, mask , reuse )
         p = self.rescale_back(p )
 
         return  p
