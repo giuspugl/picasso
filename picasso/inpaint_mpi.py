@@ -26,11 +26,9 @@ from inpainters.interfaces  import HoleInpainter
 from utils import utils
 
 from  utils import (
-    setup_input,
     set_header,
     f2h,
     rd2tp,
-    numpy2png
 
 )
 

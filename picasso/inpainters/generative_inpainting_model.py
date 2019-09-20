@@ -310,10 +310,9 @@ class InpaintCAModel(Model):
         """
         # generate mask, 1 represents masked point
         batch_pos , masks = tf.split(batch_data, 2, axis=2)
-        masks = tf.cast(masks[0:1, :, :, 0:1]>127.5, tf.float32)
-        # image to range in -1 and 1
-        batch_pos = batch_pos  / 127.5 - 1.
 
+        masks = tf.cast(masks[0:1, :, :, 0:1]>0.5, tf.float32)
+        # image to range in -1 and 1
         batch_incomplete = batch_pos * (1. - masks)
         # inpaint
         x1, x2, flow = self.build_inpaint_net(

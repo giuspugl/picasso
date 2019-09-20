@@ -134,7 +134,8 @@ class   DeepPrior ():
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
 
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
-        maskdmap = (maskdmap -minval) / (maxval - minval)
+        maskdmap = (maskdmap -minval) / (maxval - minval) #rescale to  (0,1)
+
         maskdmap[np.logical_not( holemask)]=0.
 
         maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
@@ -145,3 +146,7 @@ class   DeepPrior ():
         self.min = minval;  self.max = maxval
 
         pass
+
+    def rescale_back (self, v ) :
+        return  ( v* (self.max - self.min) +
+                    self.min )

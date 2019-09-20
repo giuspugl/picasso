@@ -3,7 +3,6 @@ from  inpainters  import (
   contextual_attention_gan    as ca,
   nearest_neighbours_inpainter as nn
   )
-from utils import numpy2png
 
 
 class HoleInpainter() :
@@ -37,13 +36,6 @@ class HoleInpainter() :
         self.Inpainter.rdseed = rdseed
         return   self.Inpainter.setup_input( fname )
 
-
-
-    def rescale_back (self, v ) :
-        return  ( v* (self.Inpainter.max - self.Inpainter.min) +
-                    self.Inpainter.min )
-
-
     def DPinpaint(self,reuse ) :
         if reuse :
             self.Inpainter.compile (optimizer=self.optimizer)
@@ -51,15 +43,13 @@ class HoleInpainter() :
         self.Inpainter.evaluate(self.Inpainter.Z,self.Inpainter.X)
         # predict and rescale back
         p =   self.Inpainter.predict()[0,:,:,0]
-        p = self.rescale_back(p )
+        p = self.Inpainter.rescale_back(p )
         return p
 
     def GANinpaint  (self , reuse  ) :
-        image = numpy2png(self.Inpainter.X )
-        mask = numpy2png (1 - self.Inpainter.mask )
 
-        p = self.Inpainter.predict(image, mask , reuse )
-        p = self.rescale_back(p )
+        p = self.Inpainter.predict( reuse )
+        p = self.Inpainter.rescale_back(p )
 
         return  p
 

@@ -27,15 +27,29 @@ class ContextualAttention(InpaintCAModel) :
         maskdmap=np.load(fname_masked)
         holemask = np.ma.masked_not_equal(maskdmap,0) .mask
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
-        maskdmap = (maskdmap -minval) / (maxval - minval)
+
+        maskdmap = 2. *(maskdmap -minval) / (maxval - minval) -1 #rescaling to -1,1
+
         self.X = maskdmap;
-        self.mask  = np.int_(holemask  )
+        self.mask  = 1. - np.int_(holemask  )
         self.min = minval;  self.max = maxval
+
         pass
 
-    def preprocess_input ( self, image, mask ) :
-        self.h, self.w,_  = image.shape
+    def rescale_back (self, v ) :
+
+        return ((v+1 )* (self.max - self.min)/2. +
+                   self.min  )
+
+    def preprocess_input ( self  ) :
+
+        self.h, self.w = self.X.shape
+
         grid = 8
+        image  = np.repeat(self.X [:,:,np.newaxis], 3, axis=2)
+        mask  = np.repeat( self. mask[:,:,np.newaxis], 3, axis=2)
+        #eventually resize the image
+
         image = image[:self.h//grid*grid, :self.w//grid*grid, :]
         mask = mask[:self.h//grid*grid, :self.w//grid*grid, :]
 
@@ -50,9 +64,9 @@ class ContextualAttention(InpaintCAModel) :
 
     def postprocess_output ( self, output,sess  ):
 
-        output = (output + 1.) * 127.5
+
         output = tf.reverse(output, [-1])
-        output = tf.saturate_cast(output, tf.uint8)
+
         # load pretrained model
         vars_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
         assign_ops = []
@@ -66,18 +80,16 @@ class ContextualAttention(InpaintCAModel) :
         sess.run(assign_ops)
         if self.verbose  : print('ContextualAttention Model loaded.')
         result = sess.run(output)
-
         outarray = result[0][:, :, ::-1].mean(axis=-1,
-                    keepdims=1) .reshape(self.h,self.w)
-        return outarray /255.
+                    keepdims=True ) .reshape(self.h,self.w)
+        return outarray
 
-
-    def predict (self, image , mask , reuse  ):
+    def predict (self,   reuse  ):
 
         sess_config = tf.ConfigProto()
         sess_config.gpu_options.allow_growth = True
         with tf.Session(config=sess_config) as sess:
-            input_image = self.preprocess_input( image, mask )
+            input_image = self.preprocess_input( )
             output   = self.build_server_graph(input_image, reuse=reuse  )
             out = self.postprocess_output(output, sess )
             return out
