@@ -86,7 +86,7 @@ def main(args):
         for k,j  in  zip(keys, range(len(inputmap)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
 
-            Inpainter.setup_input( fname  )
+            Inpainter.setup_input( fname , rdseed =(i +129292) )
 
             predicted = Inpainter (reuse =reuse )
             np.save(args.stackfile+k+'_{:.5f}_{:.5f}{}.npy'.format(ra[i],dec[i],args.method ), predicted)
@@ -94,8 +94,6 @@ def main(args):
             inputmap[j][pixs] = inpaintedmap[pixs]
             if not reuse : reuse =True
 
-
-        if i ==1:  break
 
     maps  = np.concatenate(inputmap*mask ).reshape(hp.nside2npix(nside), len(inputmap))
     reducmaps = np.zeros_like(maps)

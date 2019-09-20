@@ -71,7 +71,7 @@ def main(args):
         for k,j  in  zip(keys, range(len(inputmap)) ) :
 
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-            Inpainter.setup_input( fname  )
+            Inpainter.setup_input( fname  , rdseed =(i +129292) )
             import time
             s= time.clock()
             predicted = Inpainter(reuse=reuse  )
@@ -83,8 +83,6 @@ def main(args):
             inputmap[j][pixs] = inpaintedmap[pixs]
 
             if not reuse : reuse =True
-
-        if i ==100:  break
 
     if args.outputmap :
         hp.write_map(args.outputmap , [inputmap[k]  for k in range(len(inputmap))] , overwrite=args.overwrite    )

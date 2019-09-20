@@ -84,6 +84,7 @@ class   DeepPrior ():
         input_shape,
         nd =[16,32,64,128  ,128  ,128],
         verbose = False  ):
+        self.rdseed=123456789
         self.verbose=verbose
         X_input =  Input(   input_shape )
         nu=nd[::-1]
@@ -128,7 +129,7 @@ class   DeepPrior ():
         pred= self.model.predict(self.Z)
         return pred
 
-    def setup_input(self,fname_masked  , seed= 123456789 ):
+    def setup_input(self,fname_masked    ):
         maskdmap=np.load(fname_masked)
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
 
@@ -138,7 +139,7 @@ class   DeepPrior ():
 
         maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
 
-        randstate= np.random.RandomState(seed)
+        randstate= np.random.RandomState(self.rdseed)
         noisemap =     randstate.uniform( size=maskdmap.shape )
         self.X = maskdmap; self.Z = noisemap ;
         self.min = minval;  self.max = maxval

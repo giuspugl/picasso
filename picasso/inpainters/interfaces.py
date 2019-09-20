@@ -13,8 +13,8 @@ class HoleInpainter() :
             self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1),
                                             verbose = args.debug  )
             self.epochs =args.dp_epochs
-            Adaopt="Adam"
-            self.Inpainter.compile(optimizer=Adaopt )
+            self.optimizer="Adam"
+            self.Inpainter.compile(optimizer=self.optimizer )
 
         elif args.method=='Contextual-Attention' :
             self.Inpainter = ca.ContextualAttention( modeldir =args.checkpoint_dir
@@ -27,13 +27,14 @@ class HoleInpainter() :
 
     def __call__(self, reuse ) :
         if self.method== 'Deep-Prior':
-            return self.DPinpaint()
+            return self.DPinpaint(reuse=reuse )
         elif self.method== 'Contextual-Attention':
             return self.GANinpaint(reuse=reuse )
         elif self.method== 'Nearest-Neighbours':
             return self.NNinpaint()
 
-    def setup_input(self , fname ) :
+    def setup_input(self , fname, rdseed=None  ) :
+        self.Inpainter.rdseed = rdseed
         return   self.Inpainter.setup_input( fname )
 
 
@@ -43,8 +44,9 @@ class HoleInpainter() :
                     self.Inpainter.min )
 
 
-    def DPinpaint(self) :
-
+    def DPinpaint(self,reuse ) :
+        if reuse :
+            self.Inpainter.compile (optimizer=self.optimizer)
         self.Inpainter.train(self.Inpainter.Z , self.Inpainter.X , epochs=self.epochs )
         self.Inpainter.evaluate(self.Inpainter.Z,self.Inpainter.X)
         # predict and rescale back
