@@ -17,7 +17,6 @@ from mpi4py import MPI
 from  utils import utils
 
 from  utils import (
-    setup_input,
     h2f,
     set_header,
     rd2tp
@@ -76,7 +75,7 @@ def main(args):
         	np.save(args.stackfile+k+'_{:.5f}_{:.5f}_masked'.format(ra[i],dec[i] ),
                                 h2f(mask * inputmap[j] ,header))
         	np.save(args.stackfile+k+'_{:.5f}_{:.5f}'.format(ra[i],dec[i])  , h2f(inputmap[j] ,header) )
-
+        break
         if i %100 ==0  and rank ==0  :
             print("Stacking %d source "%i   )
 
@@ -85,21 +84,22 @@ def main(args):
 
     if rank ==0 :
         print ("collecting stacks to 1 single file" )
-        globT = np.zeros( (Nstacks, 128,128))
-        mglobT = np.zeros( (Nstacks, 128,128))
+        glob_Nstacks= glob_ra.shape [0]
+        globT = np.zeros( (glob_Nstacks, Npix,Npix))
+        mglobT = np.zeros( (glob_Nstacks, Npix,Npix))
         if args.pol :
-            globQ = np.zeros( (Nstacks, 128,128))
-            globU = np.zeros( (Nstacks, 128,128))
-            mglobQ = np.zeros( (Nstacks, 128,128))
-            mglobU = np.zeros( (Nstacks, 128,128))
-        for i in range(Nstacks):
-            globT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] ))
-            mglobT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] ))
+            globQ = np.zeros( (glob_Nstacks, Npix,Npix))
+            globU = np.zeros( (glob_Nstacks, Npix,Npix))
+            mglobQ = np.zeros( (glob_Nstacks, Npix,Npix))
+            mglobU = np.zeros( (glob_Nstacks, Npix,Npix))
+        for i in range(glob_Nstacks):
+            globT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
+            mglobT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
             if args.pol:
-                globQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] ))
-                mglobQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] ))
-                globU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}.npy'.format(ra[i],dec[i] ))
-                mglobU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] ))
+                globQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
+                mglobQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
+                globU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
+                mglobU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
         np.save(args.stackfile+'T_masked',  mglobT)
         np.save(args.stackfile+'T' , globT)
         if args.pol:

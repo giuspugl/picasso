@@ -24,6 +24,8 @@ from keras.models import Model
 from keras.initializers import glorot_uniform
 from keras.optimizers import RMSprop, Adam
 
+from utils import MinMaxRescale
+
 class   DeepPrior ():
 
     def upsampling_block(self, X, f, filters, stage, block ):
@@ -134,7 +136,8 @@ class   DeepPrior ():
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
 
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
-        maskdmap = (maskdmap -minval) / (maxval - minval) #rescale to  (0,1)
+        maskdmap =MinMaxRescale(maskdmap,a =0,b=1 )
+        #maskdmap = (maskdmap -minval) / (maxval - minval) #rescale to  (0,1)
 
         maskdmap[np.logical_not( holemask)]=0.
 
@@ -148,5 +151,6 @@ class   DeepPrior ():
         pass
 
     def rescale_back (self, v ) :
-        return  ( v* (self.max - self.min) +
-                    self.min )
+        return MinMaxRescale(v, a= self.min , b = self.max )
+        #return  ( v* (self.max - self.min) +
+        #            self.min )

@@ -67,3 +67,8 @@ def set_header(ra,dec, size_patch ,Npix=128 ):
     hdr.set('CUNIT2'  , 'deg')
     hdr.set('COORDSYS','icrs')
     return hdr
+
+
+def MinMaxRescale(x,a=0,b=1):
+    xresc = (b-a)*(x- x.min() )/(x.max() - x.min() ) +a
+    return xresc 
