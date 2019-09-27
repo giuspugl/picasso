@@ -90,6 +90,7 @@ def main(args):
             mglobQ = np.zeros( (glob_Nstacks, Npix,Npix))
             mglobU = np.zeros( (glob_Nstacks, Npix,Npix))
         for i in range(glob_Nstacks):
+            if i%1000 == 0 : print(i)
             globT[i,:,: ] =np.load (args.stackfile+ 'singlestacks/T_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
             mglobT[i,:,: ] =np.load (args.stackfile+ 'singlestacks/T_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
             if args.pol:

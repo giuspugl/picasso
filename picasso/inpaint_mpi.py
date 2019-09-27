@@ -87,7 +87,7 @@ def main(args):
             Inpainter.setup_input( fname , rdseed =(i +129292) )
 
             predicted = Inpainter (reuse =reuse )
-            np.save(args.stackfile+k+'_{:.5f}_{:.5f}{}.npy'.format(ra[i],dec[i],args.method ), predicted)
+            np.save(args.outdir+'{}/'+k+'_{:.5f}_{:.5f}.npy'.format(args.method , ra[i],dec[i]), predicted)
             inpaintedmap, footprint =  f2h (predicted ,header, nside )
             inputmap[j][pixs] = inpaintedmap[pixs]
             if not reuse : reuse =True
@@ -111,7 +111,8 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser( description="prepare training and testing dataset from a healpix map " )
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
-	parser.add_argument("--stackfile", help='path to the file with stacked maps')
+	parser.add_argument("--stackfile", help='path to the file with stacked masked maps')
+    parser.add_argument("--outdir", help='path to the outputs with stacked inpainted  maps')
 	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')
 	parser.add_argument("--outputmap", help='path and name  to the inpainted HEALPIX map  ')
 	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention', 'Nearest-Neighbours'. ")
