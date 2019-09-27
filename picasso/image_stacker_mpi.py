@@ -8,7 +8,6 @@
 #   Copyright (C) 2019   Giuseppe Puglisi    gpuglisi@stanford.edu
 #
 
-
 import healpy as hp
 import numpy as np
 import argparse
@@ -45,16 +44,15 @@ def main(args):
 
     ra =  glob_ra[slice( start , stop )]
     dec =  glob_dec[slice( start , stop )]
-
     Nstacks= ra.shape [0]
     Npix = 128 #This is hard-coded because of the architecture of both CNN
     if args.pol :
         keys = ['T', 'Q', 'U']
-        inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] )
+        inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2], verbose=False )
     else:
         keys = ['T' ]
 
-        inputmap = [hp.read_map( args.hpxmap) ]
+        inputmap = [hp.read_map( args.hpxmap, verbose=False ) ]
 
     mask = np.ones_like (inputmap[0] )
     beam =np.deg2rad( args.beamsize /60.)
@@ -72,10 +70,9 @@ def main(args):
         mask[pixs]   = 0
 
         for k,j  in  zip(keys, range(len(inputmap)) ) :
-        	np.save(args.stackfile+k+'_{:.5f}_{:.5f}_masked'.format(ra[i],dec[i] ),
+        	np.save(args.stackfile+'singlestacks/'+k+'_{:.5f}_{:.5f}_masked'.format(ra[i],dec[i] ),
                                 h2f(mask * inputmap[j] ,header))
-        	np.save(args.stackfile+k+'_{:.5f}_{:.5f}'.format(ra[i],dec[i])  , h2f(inputmap[j] ,header) )
-        break
+        	np.save(args.stackfile+'singlestacks/'+k+'_{:.5f}_{:.5f}'.format(ra[i],dec[i])  , h2f(inputmap[j] ,header) )
         if i %100 ==0  and rank ==0  :
             print("Stacking %d source "%i   )
 
@@ -93,13 +90,13 @@ def main(args):
             mglobQ = np.zeros( (glob_Nstacks, Npix,Npix))
             mglobU = np.zeros( (glob_Nstacks, Npix,Npix))
         for i in range(glob_Nstacks):
-            globT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
-            mglobT[i,:,: ] =np.load (args.stackfile+ 'T_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
+            globT[i,:,: ] =np.load (args.stackfile+ 'singlestacks/T_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
+            mglobT[i,:,: ] =np.load (args.stackfile+ 'singlestacks/T_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
             if args.pol:
-                globQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
-                mglobQ[i,:,: ] =np.load (args.stackfile+ 'Q_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
-                globU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
-                mglobU[i,:,: ] =np.load (args.stackfile+ 'U_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
+                globQ[i,:,: ] =np.load (args.stackfile+ 'singlestacks/Q_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
+                mglobQ[i,:,: ] =np.load (args.stackfile+ 'singlestacks/Q_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
+                globU[i,:,: ] =np.load (args.stackfile+ 'singlestacks/U_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
+                mglobU[i,:,: ] =np.load (args.stackfile+ 'singlestacks/U_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
         np.save(args.stackfile+'T_masked',  mglobT)
         np.save(args.stackfile+'T' , globT)
         if args.pol:
