@@ -10,6 +10,7 @@
 
 import healpy as hp
 import numpy as np
+import os
 import argparse
 from mpi4py import MPI
 
@@ -22,14 +23,35 @@ from  utils import (
 
 )
 
+print(r"""
 
+8888888b. 8888888 .d8888b.        d8888  .d8888b.   .d8888b.   .d88888b.
+888   Y88b  888  d88P  Y88b      d88888 d88P  Y88b d88P  Y88b d88P" "Y88b
+888    888  888  888    888     d88P888 Y88b.      Y88b.      888     888
+888   d88P  888  888           d88P 888  "Y888b.    "Y888b.   888     888
+8888888P"   888  888          d88P  888     "Y88b.     "Y88b. 888     888
+888         888  888    888  d88P   888       "888       "888 888     888
+888         888  Y88b  d88P d8888888888 Y88b  d88P Y88b  d88P Y88b. .d88P
+888       8888888 "Y8888P" d88P     888  "Y8888P"   "Y8888P"   "Y88888P"
+
+""" )
 
 def main(args):
 
     comm    = MPI.COMM_WORLD
     rank    = comm.Get_rank()
     nprocs  = comm.Get_size()
-    glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)
+
+    try :
+        os.makedirs(args.stackfile+ 'singlestacks')
+    except  FileExistsError:
+        print (f"Warning: Overwriting files in {args.stackfile+'singlestacks'}")
+
+
+    try :
+        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)
+    except ValueError:
+        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=False)
 
     localsize = np.int_(glob_ra.shape[0]/nprocs)
     remainder = glob_ra.shape[0]% nprocs
@@ -59,7 +81,7 @@ def main(args):
 
 
     nside = hp.get_nside(inputmap)
-    size_im = {2048: 192.  ,4096 : 64. }
+    size_im = {2048: 192.  ,4096 : 64., 1024:384. }
     for i in range(Nstacks):
         sizepatch = size_im[nside]*1. /Npix/60.
         header       = set_header(ra[i],dec[i], sizepatch )

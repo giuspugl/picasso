@@ -11,7 +11,20 @@
 import healpy as hp
 import numpy as np
 import argparse
+import os
 
+print(r"""
+
+8888888b. 8888888 .d8888b.        d8888  .d8888b.   .d8888b.   .d88888b.
+888   Y88b  888  d88P  Y88b      d88888 d88P  Y88b d88P  Y88b d88P" "Y88b
+888    888  888  888    888     d88P888 Y88b.      Y88b.      888     888
+888   d88P  888  888           d88P 888  "Y888b.    "Y888b.   888     888
+8888888P"   888  888          d88P  888     "Y88b.     "Y88b. 888     888
+888         888  888    888  d88P   888       "888       "888 888     888
+888         888  Y88b  d88P d8888888888 Y88b  d88P Y88b  d88P Y88b. .d88P
+888       8888888 "Y8888P" d88P     888  "Y8888P"   "Y8888P"   "Y88888P"
+
+""" )
 
 from  inpainters  import (
   deep_prior_inpainter as dp ,
@@ -37,7 +50,17 @@ def main(args):
 
     Npix = 128 ## WARNING: This is hard-coded because of the architecture of both CNN
 
-    ra,dec   = np.loadtxt(args.ptsourcefile ,unpack=True)
+    try :
+        os.makedirs(args.outdir+f"{args.method}")
+    except  FileExistsError:
+        print (f"Warning: Overwriting files in {args.outdir}+{args.method}")
+
+
+
+    try :
+        ra,dec   = np.loadtxt(args.ptsourcefile ,unpack=True)
+    except ValueError:
+        ra,dec   = np.loadtxt(args.ptsourcefile ,unpack=False)
 
     Nstacks= ra.shape [0]
 
@@ -53,7 +76,7 @@ def main(args):
 
     nside = hp.get_nside(inputmap)
 
-    size_im = {2048: 192.  ,4096 : 64., 32 :360. }
+    size_im = {2048: 192.  ,4096 : 64., 1024:384. }
     beam =np.deg2rad( args.beamsize /60.)
 
     Inpainter =  HoleInpainter (args , Npix=Npix  )
@@ -71,7 +94,7 @@ def main(args):
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
             Inpainter.setup_input( fname  , rdseed =(i +129292) )
             predicted = Inpainter(reuse=reuse  )
-            np.save(args.outdir+'{}/'+k+'_{:.5f}_{:.5f}.npy'.format(args.method , ra[i],dec[i]), predicted)
+            np.save(args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i]), predicted)
             inpaintedmap, footprint =  f2h (predicted ,header, nside )
 
             inputmap[j][pixs] = inpaintedmap[pixs]
