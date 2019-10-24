@@ -109,7 +109,7 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser( description="prepare training and testing dataset from a healpix map " )
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
-	parser.add_argument("--stackfile", help='path to the file with stacked masked maps')
+	parser.add_argument("--stackfile", help='path to the directory with stacked masked maps')
 	parser.add_argument("--outdir", help='path to the outputs with stacked inpainted  maps')
 
 	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')

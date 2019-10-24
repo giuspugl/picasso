@@ -131,10 +131,10 @@ def estimate_marchingsquare(data , threshold ):
 def get_functionals(im , nevals= 32):
     vmin =im.min() ; vmax=im.max()
 
-    rhos =  pl.linspace( vmin,vmax, nevals)
-    f= pl.zeros_like(rhos)
-    u= pl.zeros_like(rhos)
-    chi= pl.zeros_like(rhos)
+    rhos =  np.linspace( vmin,vmax, nevals)
+    f= np.zeros_like(rhos)
+    u= np.zeros_like(rhos)
+    chi= np.zeros_like(rhos)
 
     for k, rho in np.ndenumerate( rhos) :
         f[k], u[k],chi[k]=  estimate_marchingsquare(im, rho )

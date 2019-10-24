@@ -49,7 +49,7 @@ def main(args):
 
 
     try :
-        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)
+        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)[-100:, -100:]
     except ValueError:
         glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=False)
 
@@ -112,7 +112,7 @@ def main(args):
             mglobQ = np.zeros( (glob_Nstacks, Npix,Npix))
             mglobU = np.zeros( (glob_Nstacks, Npix,Npix))
         for i in range(glob_Nstacks):
-            if i%1000 == 0 : print(i)
+            #if i%1000 == 0 : print(i)
             globT[i,:,: ] =np.load (args.stackfile+ 'singlestacks/T_{:.5f}_{:.5f}.npy'.format(glob_ra[i],glob_dec[i] ))
             mglobT[i,:,: ] =np.load (args.stackfile+ 'singlestacks/T_{:.5f}_{:.5f}_masked.npy'.format(glob_ra[i],glob_dec[i] ))
             if args.pol:
@@ -137,7 +137,7 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser( description="prepare training and testing dataset from a healpix map " )
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
-	parser.add_argument("--stackfile", help='path to the file with stacked maps')
+	parser.add_argument("--stackfile", help='path to the directory where to save stacked maps')
 	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')
 	parser.add_argument("--pol", action="store_true" , default=False )
 	args = parser.parse_args()

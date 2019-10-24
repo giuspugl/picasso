@@ -15,9 +15,9 @@ import argparse
 from mpi4py import MPI
 import os
 import sys
-print (sys.version)
+#print (sys.version)
 
-print(r"""
+codename = (r"""
 
 8888888b. 8888888 .d8888b.        d8888  .d8888b.   .d8888b.   .d88888b.
 888   Y88b  888  d88P  Y88b      d88888 d88P  Y88b d88P  Y88b d88P" "Y88b
@@ -52,15 +52,18 @@ from  utils import (
 def main(args):
     comm    = MPI.COMM_WORLD
     rank    = comm.Get_rank()
+    ( np.linspace (-1,1,  rank*10000 ))**0.5
+    if rank==0 :
+        print(codename)
     nprocs  = comm.Get_size()
     Npix = 128 ## WARNING: This is hard-coded because of the architecture of both CNN
     try :
         os.makedirs(args.outdir+f"{args.method}")
     except   FileExistsError:
-        print (f"Warning: Overwriting files in {args.outdir}+{args.method}")
+        print (f"Warning: Overwriting files in {args.outdir}{args.method}")
 
     try :
-        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)
+        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)[-10:, -10:]
     except ValueError:
         glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=False)
 
@@ -80,12 +83,27 @@ def main(args):
     dec =  glob_dec[slice( start , stop )]
     Nstacks= ra.shape [0]
 
-    if args.pol :
+    if args.pol and args.skipT  :
+        if rank ==0  :print ("Skipping T, inpainting Q, U ")
+        keys = ['Q', 'U']
+        inputmap = hp.read_map(args.hpxmap  ,field=[1,2] ,verbose=args.debug)
+    elif args.pol and not args.skipT :
         keys = ['T', 'Q', 'U']
+        if rank ==0  :  print ("Inpainting T,Q,U")
         inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] ,verbose=args.debug)
-    else:
+
+    elif not args.skipT and not args.pol :
+        if rank ==0  :  print ("Inpainting T ")
         keys = ['T' ]
         inputmap = [hp.read_map( args.hpxmap, verbose=args.debug) ]
+    else:
+        raise ValueError (f'Please indicate  what you wanna inpaint'
+                            'with input arguments    --skip-temperature and  --pol' \'
+                            'at least one of them needs to be True, '
+                            'they are  {args.skipT} {args.pol}' )
+        return
+
+
 
 
     mask = np.zeros_like (inputmap[0] )
@@ -124,7 +142,8 @@ def main(args):
     comm.Allreduce(maps , reducmaps, op=MPI.SUM)
     comm.Allreduce(mask, globmask , op=MPI.SUM)
     if rank ==0 and args.outputmap :
-        hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))] , overwrite=args.overwrite    )
+        hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]
+                    , overwrite=args.overwrite    )
 
     comm.Barrier()
 
@@ -136,12 +155,14 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser( description="prepare training and testing dataset from a healpix map " )
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
-	parser.add_argument("--stackfile", help='path to the file with stacked masked maps')
+	parser.add_argument("--stackfile", help='path to the directory with stacked masked maps')
 	parser.add_argument("--outdir", help='path to the outputs with stacked inpainted  maps')
 	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')
 	parser.add_argument("--outputmap", help='path and name  to the inpainted HEALPIX map  ')
 	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention', 'Nearest-Neighbours'. ")
 	parser.add_argument("--pol", action="store_true" , default=False )
+	parser.add_argument("--skip_temperature",dest ="skipT", action="store_true" , default=False )
+
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
 	parser.add_argument('--nearest-neighbours-tolerance' , dest = 'nn_tol', type= np.float, default = 1e-8 )
@@ -154,9 +175,10 @@ if __name__=="__main__":
 
 
 """
-mpirun -np 2  python picasso/picasso/MPI_stack2healpix.py  --stackfile ~/work/inpainting/T_99.89973_-51.09838_masked.npy \
- --ptsourcefile ~/work/inpainting/FG_inpainting/pccs_857_planck.dat --outputmap test.fits \
- --overwrite --debug --hpxmap  ~/work/heavy_maps/HFI_SkyMap_857-field-Int_2048_R3.00_full.fits  \
- --beamsize 5 --deep-prior-epochs 10 --checkpoint_dir  /Users/peppe/work/inpainting/FG_inpainting/model_logs/cmb  \
- --method Deep-Prior
+mpirun -np 4  python ~/work/picasso/picasso/inpaint_mpi.py  --stackfile ~/work/inpainting/stacks/dust/singlestacks/ \
+--ptsourcefile ~/work/inpainting/FG_inpainting/ptsrcS3_2019-08-02.dat  --outdir outputs/dust/  \
+--outputmap ~/work/heavy_maps/test.fits --hpxmap ~/work/heavy_maps/Planck353GHz_pysm_s1d1_5arcmin.fits.gz   \
+--beamsize 5 --deep-prior-epochs 10 \
+ --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/dust --method Nearest-Neighbours \
+ --overwrite --debug
 """
