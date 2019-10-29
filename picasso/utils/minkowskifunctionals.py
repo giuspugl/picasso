@@ -140,9 +140,3 @@ def get_functionals(im , nevals= 32):
         f[k], u[k],chi[k]=  estimate_marchingsquare(im, rho )
 
     return rhos, f,u,chi
-
-
-def return_intersection(hist_1, hist_2):
-    minima = np.minimum(hist_1, hist_2)
-    intersection = np.true_divide(np.sum(minima), np.sum(hist_2))
-    return intersection
