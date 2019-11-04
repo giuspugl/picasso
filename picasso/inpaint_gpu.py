@@ -58,19 +58,32 @@ def main(args):
 
 
     try :
-        ra,dec   = np.loadtxt(args.ptsourcefile ,unpack=True)
+        ra,dec   = np.loadtxt(args.ptsourcefile ,unpack=True)[-10:, -10:]
     except ValueError:
         ra,dec   = np.loadtxt(args.ptsourcefile ,unpack=False)
 
+
     Nstacks= ra.shape [0]
 
-    if args.pol :
+    if args.pol and args.skipT  :
+        if args.debug :print ("Skipping T, inpainting Q, U ")
+        keys = ['Q', 'U']
+        inputmap = hp.read_map(args.hpxmap  ,field=[1,2] ,verbose=args.debug)
+    elif args.pol and not args.skipT :
         keys = ['T', 'Q', 'U']
+        if args.debug  :  print ("Inpainting T,Q,U")
         inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] ,verbose=args.debug)
-    else:
+
+    elif not args.skipT and not args.pol :
+        if args.debug  :  print ("Inpainting T ")
         keys = ['T' ]
         inputmap = [hp.read_map( args.hpxmap, verbose=args.debug) ]
-
+    else:
+        raise ValueError (f'Please indicate  what you wanna inpaint'
+                            'with input arguments    --skip-temperature and  --pol'
+                            'at least one of them needs to be True, '
+                            'they are  {args.skipT} {args.pol}' )
+        return
 
     mask = np.zeros_like (inputmap[0] )
 
@@ -95,11 +108,12 @@ def main(args):
             Inpainter.setup_input( fname  , rdseed =(i +129292) )
             predicted = Inpainter(reuse=reuse  )
             np.save(args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i]), predicted)
-            inpaintedmap, footprint =  f2h (predicted ,header, nside )
+            #inpaintedmap, footprint =  f2h (predicted ,header, nside )
 
-            inputmap[j][pixs] = inpaintedmap[pixs]
-
+            #inputmap[j][pixs] = inpaintedmap[pixs]
+            
             if not reuse : reuse =True
+        break
 
     if args.outputmap :
         hp.write_map(args.outputmap , [inputmap[k]  for k in range(len(inputmap))] , overwrite=args.overwrite    )
@@ -116,6 +130,8 @@ if __name__=="__main__":
 	parser.add_argument("--outputmap", help='path and name  to the inpainted HEALPIX map  ')
 	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention', 'Nearest-Neighbours'. ")
 	parser.add_argument("--pol", action="store_true" , default=False )
+	parser.add_argument("--skip_temperature",dest ="skipT", action="store_true" , default=False )
+
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
 	parser.add_argument('--nearest-neighbours-tolerance' , dest = 'nn_tol', type= np.float, default = 1e-8 )

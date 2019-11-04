@@ -98,7 +98,7 @@ def main(args):
         inputmap = [hp.read_map( args.hpxmap, verbose=args.debug) ]
     else:
         raise ValueError (f'Please indicate  what you wanna inpaint'
-                            'with input arguments    --skip-temperature and  --pol' \'
+                            'with input arguments    --skip-temperature and  --pol'
                             'at least one of them needs to be True, '
                             'they are  {args.skipT} {args.pol}' )
         return
@@ -135,6 +135,7 @@ def main(args):
             inputmap[j][pixs] = inpaintedmap[pixs]
             if not reuse : reuse =True
 
+ 
 
     maps  = np.concatenate(inputmap*mask ).reshape(hp.nside2npix(nside), len(inputmap))
     reducmaps = np.zeros_like(maps)
@@ -175,10 +176,10 @@ if __name__=="__main__":
 
 
 """
-mpirun -np 4  python ~/work/picasso/picasso/inpaint_mpi.py  --stackfile ~/work/inpainting/stacks/dust/singlestacks/ \
---ptsourcefile ~/work/inpainting/FG_inpainting/ptsrcS3_2019-08-02.dat  --outdir outputs/dust/  \
---outputmap ~/work/heavy_maps/test.fits --hpxmap ~/work/heavy_maps/Planck353GHz_pysm_s1d1_5arcmin.fits.gz   \
---beamsize 5 --deep-prior-epochs 10 \
- --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/dust --method Nearest-Neighbours \
+mpirun -np 4  python ~/work/picasso/picasso/inpaint_mpi.py  --stackfile ~/work/inpainting/stacks/synch/singlestacks/ \
+--ptsourcefile ~/work/inpainting/FG_inpainting/ptsrcS3_2019-08-02.dat  --outdir outputs/synch/  \
+--outputmap ~/work/heavy_maps/test.fits --hpxmap ~/work/heavy_maps/SPASS_pysm_s1d1_10arcmin.fits  \
+--beamsize 10 --deep-prior-epochs 10 \
+ --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/synch --method Deep-Prior \
  --overwrite --debug
 """
