@@ -107,7 +107,7 @@ class   DeepPrior ():
                    kernel_initializer = glorot_uniform(seed=0), name='lastconv')(X)
         X=LeakyReLU(alpha=.1, name='LeakyReLU_last' )(X)
 
-        X= Dense( 1 ,activation='relu', name='FC')(X)
+        X= Dense( 1 ,activation='sigmoid', name='FC')(X)
 
         self.model = Model(inputs = X_input, outputs = X , name='DeepPrior')
 
@@ -134,9 +134,9 @@ class   DeepPrior ():
     def setup_input(self,fname_masked    ):
         maskdmap=np.load(fname_masked)
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
-
+        a=0; b=1
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
-        maskdmap =MinMaxRescale(maskdmap,a =0,b=1 )
+        maskdmap =MinMaxRescale(maskdmap,a =a ,b=b )
         #maskdmap = (maskdmap -minval) / (maxval - minval) #rescale to  (0,1)
 
         maskdmap[np.logical_not( holemask)]=0.
@@ -144,7 +144,7 @@ class   DeepPrior ():
         maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
 
         randstate= np.random.RandomState(self.rdseed)
-        noisemap =     randstate.uniform( size=maskdmap.shape )
+        noisemap =     randstate.uniform(low=a, high=b/10 ,  size=maskdmap.shape )  # see the Deep prior paper for the choice b=1./10 
         self.X = maskdmap; self.Z = noisemap ;
         self.min = minval;  self.max = maxval
 
