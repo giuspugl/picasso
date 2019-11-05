@@ -13,7 +13,7 @@ import numpy as np
 import argparse
 import os
 
-print(r"""
+codename = (r"""
 
 8888888b. 8888888 .d8888b.        d8888  .d8888b.   .d8888b.   .d88888b.
 888   Y88b  888  d88P  Y88b      d88888 d88P  Y88b d88P  Y88b d88P" "Y88b
@@ -49,11 +49,12 @@ from  utils import (
 def main(args):
 
     Npix = 128 ## WARNING: This is hard-coded because of the architecture of both CNN
-
+    if args.debug :
+        print(codename )
     try :
         os.makedirs(args.outdir+f"{args.method}")
     except  FileExistsError:
-        print (f"Warning: Overwriting files in {args.outdir}+{args.method}")
+        print (f"Warning: Overwriting files in {args.outdir}{args.method}")
 
 
 
@@ -64,13 +65,25 @@ def main(args):
 
     Nstacks= ra.shape [0]
 
-    if args.pol :
+    if args.pol and args.skipT  :
+        if args.debug :print ("Skipping T, inpainting Q, U ")
+        keys = ['Q', 'U']
+        inputmap = hp.read_map(args.hpxmap  ,field=[1,2] ,verbose=args.debug)
+    elif args.pol and not args.skipT :
         keys = ['T', 'Q', 'U']
+        if args.debug  :  print ("Inpainting T,Q,U")
         inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] ,verbose=args.debug)
-    else:
+
+    elif not args.skipT and not args.pol :
+        if args.debug  :  print ("Inpainting T ")
         keys = ['T' ]
         inputmap = [hp.read_map( args.hpxmap, verbose=args.debug) ]
-
+    else:
+        raise ValueError (f'Please indicate  what you wanna inpaint'
+                            'with input arguments    --skip-temperature and  --pol'
+                            'at least one of them needs to be True, '
+                            'they are  {args.skipT} {args.pol}' )
+        return
 
     mask = np.zeros_like (inputmap[0] )
 
@@ -82,26 +95,28 @@ def main(args):
     Inpainter =  HoleInpainter (args , Npix=Npix  )
 
     reuse = False
-    for i in range(Nstacks):
-        sizepatch = size_im[nside]*1. /Npix/60.
-        header       = set_header(ra[i],dec[i], sizepatch )
-        tht,phi      = rd2tp(ra[i],dec[i])
-        vec          = hp.ang2vec( theta = tht,phi =phi )
-        pixs         = hp.query_disc(nside,vec,3* beam)
-        mask [pixs]  = 1.
+    for i in range(Nstacks-args.Ninpaints, Nstacks ):
+        if args.reproject_to_healpix:
+            sizepatch = size_im[nside]*1. /Npix/60.
+            header       = set_header(ra[i],dec[i], sizepatch )
+            tht,phi      = rd2tp(ra[i],dec[i])
+            vec          = hp.ang2vec( theta = tht,phi =phi )
+            pixs         = hp.query_disc(nside,vec,3* beam)
+            mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(inputmap)) ) :
 
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
             Inpainter.setup_input( fname  , rdseed =(i +129292) )
             predicted = Inpainter(reuse=reuse  )
             np.save(args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i]), predicted)
-            inpaintedmap, footprint =  f2h (predicted ,header, nside )
 
-            inputmap[j][pixs] = inpaintedmap[pixs]
+            if args.reproject_to_healpix:
+                inpaintedmap, footprint =  f2h (predicted ,header, nside )
+                inputmap[j][pixs] = inpaintedmap[pixs]
 
             if not reuse : reuse =True
 
-    if args.outputmap :
+    if args.outputmap and args.reproject_to_healpix  :
         hp.write_map(args.outputmap , [inputmap[k]  for k in range(len(inputmap))] , overwrite=args.overwrite    )
 
 
@@ -111,18 +126,22 @@ if __name__=="__main__":
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
 	parser.add_argument("--stackfile", help='path to the directory with stacked masked maps')
 	parser.add_argument("--outdir", help='path to the outputs with stacked inpainted  maps')
-
 	parser.add_argument("--ptsourcefile", help='path to the file with RA, Dec coordinates of sources to be inpainted ')
 	parser.add_argument("--outputmap", help='path and name  to the inpainted HEALPIX map  ')
 	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention', 'Nearest-Neighbours'. ")
 	parser.add_argument("--pol", action="store_true" , default=False )
+	parser.add_argument("--skip_temperature",dest ="skipT", action="store_true" , default=False )
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
 	parser.add_argument('--nearest-neighbours-tolerance' , dest = 'nn_tol', type= np.float, default = 1e-8 )
+	parser.add_argument('--Ninpaints' ,   type= np.int, default = 0 )
 
 	parser.add_argument('--overwrite', default=False , action='store_true')
-
+	parser.add_argument('--reproject-to-healpix', default=False , action='store_true')
 	parser.add_argument('--debug', default=False , action='store_true')
 
 	args = parser.parse_args()
 	main( args)
+
+
+"""python /Users/peppe/work/picasso/picasso/inpaint_gpu.py  --stackfile "/Users/peppe/work/inpainting/stacks/synch/singlestacks/"  --ptsourcefile "/Users/peppe/work/inpainting/FG_inpainting/ptsrcS3_2019-08-02.dat"  --outdir outputs/synch/  --outputmap "/Users/peppe/work/heavy_maps/test.fits" --hpxmap "/Users/peppe/work/heavy_maps/SPASS_pysm_s1d1_10arcmin.fits"  --beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/sync/   --method Contextual-Attention  --overwrite --debug   --Ninpaints 1 """

@@ -49,7 +49,7 @@ def main(args):
 
 
     try :
-        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)[-100:, -100:]
+        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True) 
     except ValueError:
         glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=False)
 

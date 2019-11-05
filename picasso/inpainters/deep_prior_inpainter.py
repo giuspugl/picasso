@@ -107,7 +107,7 @@ class   DeepPrior ():
                    kernel_initializer = glorot_uniform(seed=0), name='lastconv')(X)
         X=LeakyReLU(alpha=.1, name='LeakyReLU_last' )(X)
 
-        X= Dense( 1 ,activation='sigmoid', name='FC')(X)
+        #X= Dense( 1 ,activation='relu', name='FC')(X)
 
         self.model = Model(inputs = X_input, outputs = X , name='DeepPrior')
 

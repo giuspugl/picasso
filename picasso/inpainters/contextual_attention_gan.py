@@ -26,15 +26,17 @@ class ContextualAttention(InpaintCAModel) :
 
         super(ContextualAttention , self).__init__()
 
-    def setup_input(self,fname_masked    ):
+    def setup_input(self,fname_masked     ):
+        
+        fname_whole= fname_masked.split('_masked')[0] +fname_masked.split('_masked')[1]
         maskdmap=np.load(fname_masked)
         holemask = np.ma.masked_not_equal(maskdmap,0) .mask
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
-        maskdmap = MinMaxRescale(maskdmap ,a=-1, b=1 ) #rescaling to -1,1
-        #maskdmap = 2. *(maskdmap -minval) / (maxval - minval) -1
-        #maskdmap = (maskdmap - maskdmap.mean()) /maskdmap.std()
-        #self.mean = maskdmap.mean() ; self.std = maskdmap.std()
-        self.X = maskdmap;
+        wholemap=  np.load(fname_whole)
+        #maskdmap = MinMaxRescale(maskdmap ,a=-1, b=1 )
+        wholemap= MinMaxRescale(wholemap , a=-1, b=1 )
+
+        self.X = wholemap;
         self.mask  = 1. - np.int_(holemask  )
         self.min = minval;  self.max = maxval
 
@@ -42,9 +44,7 @@ class ContextualAttention(InpaintCAModel) :
 
     def rescale_back (self, v ) :
         return MinMaxRescale(v, a= self.min , b = self.max )
-        #return v *self.std + self.mean
-        #return ((v+1 )* (self.max - self.min)/2. +
-        #           self.min  )
+
 
     def preprocess_input ( self  ) :
 
