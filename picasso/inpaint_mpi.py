@@ -37,7 +37,7 @@ from  inpainters  import (
   interfaces
   )
 from inpainters.interfaces  import HoleInpainter
-
+import warnings; warnings.simplefilter('ignore')
 from utils import utils
 
 from  utils import (
@@ -52,7 +52,7 @@ from  utils import (
 def main(args):
     comm    = MPI.COMM_WORLD
     rank    = comm.Get_rank()
-    ( np.linspace (-1,1,  rank*10000 ))**0.5
+    ( np.linspace (-1,1,  rank*10000 ))**0.5 #operation to unsynchronize processors
     if rank==0 :
         print(codename)
     nprocs  = comm.Get_size()
@@ -63,7 +63,7 @@ def main(args):
         print (f"Warning: Overwriting files in {args.outdir}{args.method}")
 
     try :
-        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)[-10:, -10:]
+        glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=True)
     except ValueError:
         glob_ra,glob_dec  = np.loadtxt(args.ptsourcefile ,unpack=False)
 
@@ -117,34 +117,37 @@ def main(args):
     Inpainter =  HoleInpainter (args , Npix=Npix  )
 
     reuse = False
-    for i in range(Nstacks):
-        sizepatch = size_im[nside]*1. /Npix/60.
-        header       = set_header(ra[i],dec[i], sizepatch )
-        tht,phi      = rd2tp(ra[i],dec[i])
-        vec          = hp.ang2vec( theta = tht,phi =phi )
-        pixs         = hp.query_disc(nside,vec,3* beam)
-        mask [pixs]  = 1.
-        for k,j  in  zip(keys, range(len(inputmap)) ) :
+    for i in range(Nstacks-args.Ninpaints,Nstacks ):
+        if args.reproject_to_healpix:
+            sizepatch = size_im[nside]*1. /Npix/60.
+            header       = set_header(ra[i],dec[i], sizepatch )
+            tht,phi      = rd2tp(ra[i],dec[i])
+            vec          = hp.ang2vec( theta = tht,phi =phi )
+            pixs         = hp.query_disc(nside,vec,3* beam)
+            mask [pixs]  = 1.
+        for k,j  in  zip(keys, range(len(keys)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
 
             Inpainter.setup_input( fname , rdseed =(i +129292) )
 
             predicted = Inpainter (reuse =reuse )
             np.save(args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i]), predicted)
-            inpaintedmap, footprint =  f2h (predicted ,header, nside )
-            inputmap[j][pixs] = inpaintedmap[pixs]
+
             if not reuse : reuse =True
+            if args.reproject_to_healpix :
+                inpaintedmap, footprint =  f2h (predicted ,header, nside )
+                inputmap[j][pixs] = inpaintedmap[pixs]
 
- 
+    if args.reproject_to_healpix :
 
-    maps  = np.concatenate(inputmap*mask ).reshape(hp.nside2npix(nside), len(inputmap))
-    reducmaps = np.zeros_like(maps)
-    globmask= np.zeros_like(mask)
-    comm.Allreduce(maps , reducmaps, op=MPI.SUM)
-    comm.Allreduce(mask, globmask , op=MPI.SUM)
-    if rank ==0 and args.outputmap :
-        hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]
-                    , overwrite=args.overwrite    )
+        maps  = np.concatenate(inputmap*mask ).reshape(hp.nside2npix(nside), len(inputmap))
+        reducmaps = np.zeros_like(maps)
+        globmask= np.zeros_like(mask)
+        comm.Allreduce(maps , reducmaps, op=MPI.SUM)
+        comm.Allreduce(mask, globmask , op=MPI.SUM)
+        if rank ==0 and args.outputmap :
+            hp.write_map(args.outputmap , [inputmap[k] *(1- globmask) + reducmaps[:,k]  *globmask for k in range(len(inputmap))]
+                        , overwrite=args.overwrite    )
 
     comm.Barrier()
 
@@ -163,11 +166,13 @@ if __name__=="__main__":
 	parser.add_argument("--method", help=" string of inpainting technique, can be 'Deep-Prior', 'Contextual-Attention', 'Nearest-Neighbours'. ")
 	parser.add_argument("--pol", action="store_true" , default=False )
 	parser.add_argument("--skip_temperature",dest ="skipT", action="store_true" , default=False )
-
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
+	parser.add_argument('--Ninpaints' ,   type= np.int, default = 0 )
+
 	parser.add_argument('--nearest-neighbours-tolerance' , dest = 'nn_tol', type= np.float, default = 1e-8 )
 	parser.add_argument('--overwrite', default=False , action='store_true')
+	parser.add_argument('--reproject-to-healpix', default=False , action='store_true')
 
 	parser.add_argument('--debug', default=False , action='store_true')
 
@@ -176,10 +181,5 @@ if __name__=="__main__":
 
 
 """
-mpirun -np 4  python ~/work/picasso/picasso/inpaint_mpi.py  --stackfile ~/work/inpainting/stacks/synch/singlestacks/ \
---ptsourcefile ~/work/inpainting/FG_inpainting/ptsrcS3_2019-08-02.dat  --outdir outputs/synch/  \
---outputmap ~/work/heavy_maps/test.fits --hpxmap ~/work/heavy_maps/SPASS_pysm_s1d1_10arcmin.fits  \
---beamsize 10 --deep-prior-epochs 10 \
- --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/synch --method Deep-Prior \
- --overwrite --debug
+mpirun -np 1  python /Users/peppe/work/picasso/picasso/inpaint_mpi.py  --stackfile "/Users/peppe/work/inpainting/stacks/synch/singlestacks/"  --ptsourcefile "/Users/peppe/work/inpainting/FG_inpainting/ptsrcS3_2019-08-02.dat"  --outdir outputs/synch/  --outputmap "/Users/peppe/work/heavy_maps/test.fits" --hpxmap "/Users/peppe/work/heavy_maps/SPASS_pysm_s1d1_10arcmin.fits"  --beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/dust   --method Contextual-Attention  --overwrite --debug --pol  --skip_temperature  --Ninpaints 1
 """
