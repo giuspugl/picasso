@@ -1,5 +1,3 @@
-#
-#
 #    This module has been slightly modified and  imported from
 #       https://github.com/JiahuiYu/generative_inpainting
 #
@@ -26,7 +24,7 @@ from neuralgym.ops.gan_ops import random_interpolates
 
 from .generative_inpainting_ops import (
                 gen_conv, gen_deconv, dis_conv,
-                random_bbox, bbox2mask, local_patch,
+                circle_bbox, circle2mask, local_patch,
                 spatial_discounting_mask,
                 resize_mask_like, contextual_attention
             )
@@ -158,8 +156,8 @@ class InpaintCAModel(Model):
                                 summary=False, reuse=False):
         batch_pos = batch_data / 127.5 - 1.
         # generate mask, 1 represents masked point
-        bbox = random_bbox(config)
-        mask = bbox2mask(bbox, config, name='mask_c')
+        bbox = circle_bbox(config)
+        mask = circle2mask(bbox, config, name='mask_c')
         batch_incomplete = batch_pos*(1.-mask)
         x1, x2, offset_flow = self.build_inpaint_net(
             batch_incomplete, mask, config, reuse=reuse, training=training,
@@ -268,8 +266,8 @@ class InpaintCAModel(Model):
         config.MAX_DELTA_HEIGHT = 0
         config.MAX_DELTA_WIDTH = 0
         if bbox is None:
-            bbox = random_bbox(config)
-        mask = bbox2mask(bbox, config, name=name+'mask_c')
+            bbox = circle_bbox(config)
+        mask = circle2mask(bbox, config, name=name+'mask_c')
         batch_pos = batch_data / 127.5 - 1.
         edges = None
         batch_incomplete = batch_pos*(1.-mask)

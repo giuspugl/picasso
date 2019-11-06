@@ -161,15 +161,36 @@ def bbox2mask(bbox, config, name='mask'):
         mask.set_shape([1] + [height, width] + [1])
     return mask
 
+def circle_bbox(config):
+    """Generate a tlhw bbox prescribe a circle with a random radius.
 
-def circle2mask(    name='mask' ):
-    def create_circular_mask(height, width ):
+    Args:
+        config: Config should have configuration including IMG_SHAPES,
+            VERTICAL_MARGIN, RADIUS_MIN, HORIZONTAL_MARGIN, RADIUS_MAX.
 
+    Returns:
+        tuple: (top, left, height, width)
+
+    """
+    img_shape = config.IMG_SHAPES
+    img_height = img_shape[0]
+    img_width = img_shape[1]
+    r = img_width / np.random.randint(config.RADIUS_MIN,high=config.RADIUS_MAX )
+    maxt = img_height - config.VERTICAL_MARGIN - r
+    maxl = img_width - config.HORIZONTAL_MARGIN - r
+    t = tf.random_uniform(
+        [], minval=config.VERTICAL_MARGIN, maxval=maxt, dtype=tf.int32)
+    l = tf.random_uniform(
+        [], minval=config.HORIZONTAL_MARGIN, maxval=maxl, dtype=tf.int32)
+    h = tf.constant(r*2)
+    w = tf.constant(r*2)
+    return (t, l, h, w)
+
+def circle2mask(circle_bbox, config, name='mask' ):
+    def create_circular_mask(height, width):  
         mask = np.zeros((  height, width ), np.float32)
-
-        center = [np.random.randint( low = 0, high=width) ,np.random.randint(   0, high= height) ]
-        low = 6;  high =18
-        radius = width / np.random.randint(low,high=high )
+        center = [circle_bbox[0], circle_bbox[1]]
+        radius = [circle_bbox[2]/2]
 
         h = height.numpy(); w= width.numpy()
 
@@ -185,7 +206,7 @@ def circle2mask(    name='mask' ):
         return mask
 
     with tf.variable_scope(name), tf.device('/cpu:0'):
-        img_shape = [128,128]
+        img_shape = config.IMG_SHAPES
         height =   img_shape[0]
         width = img_shape[1]
         mask = tf.py_function(
