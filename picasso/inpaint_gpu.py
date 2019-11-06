@@ -34,7 +34,7 @@ interfaces
 )
 from inpainters.interfaces  import HoleInpainter
 
-
+import warnings; warnings.simplefilter('ignore')
 from utils import utils
 
 from  utils import (

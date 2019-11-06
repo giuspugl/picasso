@@ -162,6 +162,40 @@ def bbox2mask(bbox, config, name='mask'):
     return mask
 
 
+def circle2mask(    name='mask' ):
+    def create_circular_mask(height, width ):
+
+        mask = np.zeros((  height, width ), np.float32)
+
+        center = [np.random.randint( low = 0, high=width) ,np.random.randint(   0, high= height) ]
+        low = 6;  high =18
+        radius = width / np.random.randint(low,high=high )
+
+        h = height.numpy(); w= width.numpy()
+
+        Y, X = np.ogrid[   0:h   ,  0:w   ]
+        dist_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
+
+        circle   =   dist_from_center <= radius
+        mask [ circle  ]=1
+        mask = np.expand_dims(mask,0 )
+
+        mask = np.expand_dims(mask,-1 )
+
+        return mask
+
+    with tf.variable_scope(name), tf.device('/cpu:0'):
+        img_shape = [128,128]
+        height =   img_shape[0]
+        width = img_shape[1]
+        mask = tf.py_function(
+            create_circular_mask,
+            [  height, width  ],
+            tf.float32 )
+        mask.set_shape([1] + [height, width] + [1])
+    return mask
+
+
 def local_patch(x, bbox):
     """Crop local patch according to bbox.
 
@@ -514,4 +548,3 @@ def image2edge(image):
         img = cv2.Laplacian(image[i, :, :, :], cv2.CV_64F, ksize=3, scale=2)
         out.append(img)
     return np.float32(np.uint8(out))
-
