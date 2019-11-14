@@ -38,6 +38,8 @@ from  inpainters  import (
   )
 from inpainters.interfaces  import HoleInpainter
 import warnings; warnings.simplefilter('ignore')
+warnings.simplefilter('ignore', DeprecationWarning)
+
 from utils import utils
 
 from  utils import (
@@ -118,7 +120,7 @@ def main(args):
 
     reuse = False
     for i in range(Nstacks-args.Ninpaints,Nstacks ):
-        
+
         if args.reproject_to_healpix:
             sizepatch = size_im[nside]*1. /Npix/60.
             header       = set_header(ra[i],dec[i], sizepatch )

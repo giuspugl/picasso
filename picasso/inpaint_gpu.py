@@ -35,6 +35,7 @@ interfaces
 from inpainters.interfaces  import HoleInpainter
 
 import warnings; warnings.simplefilter('ignore')
+warnings.simplefilter('ignore', DeprecationWarning)
 from utils import utils
 
 from  utils import (
