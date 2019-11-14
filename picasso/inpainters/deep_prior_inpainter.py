@@ -85,9 +85,10 @@ class   DeepPrior ():
     def __init__(self,
         input_shape,
         nd =[16,32,64,128  ,128  ,128],
-        verbose = False  ):
+        verbose = False, meshgrid=True   ):
         self.rdseed=123456789
         self.verbose=verbose
+        self.meshgrid=meshgrid 
         X_input =  Input(   input_shape )
         nu=nd[::-1]
         kd =[3] * len(nu)
@@ -100,9 +101,6 @@ class   DeepPrior ():
             X= self.upsampling_block(X , ku[i], nu[i], i, 'u')
 
         X = UpSampling2D((2,2),interpolation='nearest', name='upsample_last')(X)
-        #encoder
-        #X = ZeroPadding2D((2, 2))(X_input)
-        #X= Dense( 1 ,activation='sigmoid', name='FC1')(X)
         X = Conv2D( 1  ,  (5,5) , padding='same',
                    kernel_initializer = glorot_uniform(seed=0), name='lastconv')(X)
         X=LeakyReLU(alpha=.1, name='LeakyReLU_last' )(X)
@@ -117,7 +115,7 @@ class   DeepPrior ():
     def compile (self, optimizer   ) :
         self.model.compile(loss=self.myloss, optimizer=optimizer, metrics=[self.my_accuracy] )
 
-    def train(self, z , X ,epochs =2000, verbose=False ) :
+    def train(self, z , X ,epochs =2000, verbose=False  ) :
         train_out = self.model.fit(z, X, epochs=epochs , verbose=verbose )
         self.loss=train_out.history['loss']
         self.accuracy =  train_out.history['my_accuracy']
@@ -129,28 +127,39 @@ class   DeepPrior ():
 
     def predict(self,) :
         pred= self.model.predict(self.Z)
+        
         return pred
 
     def setup_input(self,fname_masked    ):
         maskdmap=np.load(fname_masked)
+        if self.meshgrid : 
+            x = np.linspace(0, 1, maskdmap.shape[0])
+            y = np.linspace(0, 1, maskdmap.shape[1])
+            xv, yv = np.meshgrid(x, y)
+            up =  (xv-yv  +1)/2
+            down =  (xv+yv  )/2
+            
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
         a=0; b=1
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
         maskdmap =MinMaxRescale(maskdmap,a =a ,b=b )
-        #maskdmap = (maskdmap -minval) / (maxval - minval) #rescale to  (0,1)
 
         maskdmap[np.logical_not( holemask)]=0.
 
         maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
 
         randstate= np.random.RandomState(self.rdseed)
-        noisemap =     randstate.uniform(low=a, high=b/10 ,  size=maskdmap.shape )  # see the Deep prior paper for the choice b=1./10 
-        self.X = maskdmap; self.Z = noisemap ;
+        noisemap =     randstate.uniform(low=a, high=b ,  size=maskdmap.shape )  # see the Deep prior paper for the choice b=1./10 
         self.min = minval;  self.max = maxval
-
+        if self.meshgrid : 
+            self.Z =np.expand_dims(np.array([xv,yv, up,down] ).T,0)            
+            self.X = maskdmap; 
+        else:
+            randstate= np.random.RandomState(self.rdseed)
+            noisemap =     randstate.uniform(low=a, high=b/10  ,  size=maskdmap.shape ) 
+            self.X = maskdmap; 
+            self.Z = noisemap ;
         pass
 
     def rescale_back (self, v ) :
         return MinMaxRescale(v, a= self.min , b = self.max )
-        #return  ( v* (self.max - self.min) +
-        #            self.min )

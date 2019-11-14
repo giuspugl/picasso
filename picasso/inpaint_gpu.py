@@ -34,8 +34,7 @@ interfaces
 )
 from inpainters.interfaces  import HoleInpainter
 
-import warnings; warnings.simplefilter('ignore')
-warnings.simplefilter('ignore', DeprecationWarning)
+
 from utils import utils
 
 from  utils import (
@@ -94,7 +93,6 @@ def main(args):
     beam =np.deg2rad( args.beamsize /60.)
 
     Inpainter =  HoleInpainter (args , Npix=Npix  )
-
     reuse = False
     for i in range(Nstacks-args.Ninpaints, Nstacks ):
         if args.reproject_to_healpix:
@@ -114,8 +112,10 @@ def main(args):
             if args.reproject_to_healpix:
                 inpaintedmap, footprint =  f2h (predicted ,header, nside )
                 inputmap[j][pixs] = inpaintedmap[pixs]
-
-            if not reuse : reuse =True
+            if not reuse : 
+                reuse =True
+            if args.method =='Deep-Prior': 
+                Inpainter =  HoleInpainter (args , Npix=Npix  )
 
     if args.outputmap and args.reproject_to_healpix  :
         hp.write_map(args.outputmap , [inputmap[k]  for k in range(len(inputmap))] , overwrite=args.overwrite    )

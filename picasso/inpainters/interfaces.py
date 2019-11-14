@@ -6,11 +6,11 @@ from  inpainters  import (
 
 
 class HoleInpainter() :
-    def __init__ (self, args , Npix = 128 ) :
+    def __init__ (self, args , Npix = 128, meshgrid=True ) :
         if args.method =='Deep-Prior':
-
-            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 1),
-                                            verbose = args.debug  )
+            
+            self.Inpainter = dp.DeepPrior ( (Npix, Npix, 4),
+                                            verbose = args.debug, meshgrid=meshgrid   )
             self.epochs =args.dp_epochs
             self.optimizer="Adam"
             self.Inpainter.compile(optimizer=self.optimizer )
@@ -39,9 +39,9 @@ class HoleInpainter() :
     def DPinpaint(self,reuse ) :
         if reuse :
             self.Inpainter.compile (optimizer=self.optimizer)
+            
         self.Inpainter.train(self.Inpainter.Z , self.Inpainter.X , epochs=self.epochs )
         self.Inpainter.evaluate(self.Inpainter.Z,self.Inpainter.X)
-        # predict and rescale back
         p =   self.Inpainter.predict()[0,:,:,0]
         p = self.Inpainter.rescale_back(p )
         return p
