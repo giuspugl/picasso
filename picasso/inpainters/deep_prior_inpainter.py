@@ -127,10 +127,12 @@ class   DeepPrior ():
 
     def predict(self,) :
         pred= self.model.predict(self.Z)
-        
+        pred = self.X *np.int_ (self.mask) + pred * (1-np.int_( self.mask ) )
+
         return pred
 
     def setup_input(self,fname_masked    ):
+        
         maskdmap=np.load(fname_masked)
         if self.meshgrid : 
             x = np.linspace(0, 1, maskdmap.shape[0])
@@ -140,6 +142,7 @@ class   DeepPrior ():
             down =  (xv+yv  )/2
             
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
+        
         a=0; b=1
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
         maskdmap =MinMaxRescale(maskdmap,a =a ,b=b )
@@ -147,9 +150,10 @@ class   DeepPrior ():
         maskdmap[np.logical_not( holemask)]=0.
 
         maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
-
+        self.mask =np.expand_dims(np.expand_dims( holemask, axis=0), axis=-1)
         randstate= np.random.RandomState(self.rdseed)
         noisemap =     randstate.uniform(low=a, high=b ,  size=maskdmap.shape )  # see the Deep prior paper for the choice b=1./10 
+        
         self.min = minval;  self.max = maxval
         if self.meshgrid : 
             self.Z =np.expand_dims(np.array([xv,yv, up,down] ).T,0)            

@@ -130,11 +130,14 @@ def main(args):
             mask [pixs]  = 1.
         for k,j  in  zip(keys, range(len(keys)) ) :
             fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-
+            outfile =args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i])
+            if os.path.exists(outfile ) and not args.overwrite  :
+                print("File exists, skipping")
+                continue 
             Inpainter.setup_input( fname , rdseed =(i +129292) )
 
             predicted = Inpainter (reuse =reuse )
-            np.save(args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i]), predicted)
+            np.save(outfile, predicted)
 
             if not reuse : reuse =True
             if args.reproject_to_healpix :
