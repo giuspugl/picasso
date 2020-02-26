@@ -84,7 +84,7 @@ def main(args):
     ra =  glob_ra[slice( start , stop )]
     dec =  glob_dec[slice( start , stop )]
     Nstacks= ra.shape [0]
-
+    if args.Ninpaints ==0: args.Ninpaints=Nstacks
     if args.pol and args.skipT  :
         if rank ==0  :print ("Skipping T, inpainting Q, U ")
         keys = ['Q', 'U']
@@ -133,7 +133,7 @@ def main(args):
             outfile =args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i])
             if os.path.exists(outfile ) and not args.overwrite  :
                 print("File exists, skipping")
-                continue 
+                continue
             Inpainter.setup_input( fname , rdseed =(i +129292) )
 
             predicted = Inpainter (reuse =reuse )
@@ -162,7 +162,15 @@ def main(args):
 
 
 if __name__=="__main__":
-	parser = argparse.ArgumentParser( description="prepare training and testing dataset from a healpix map " )
+	parser = argparse.ArgumentParser( description="prepare training and testing dataset from a healpix map.  Usage example: "
+        "--stackfile  stacks/synch/singlestacks/    "
+        "--ptsourcefile      ptsrcS3_2019-08-02.dat  "
+        "--outdir outputs/synch/   "
+        "--outputmap  test.fits   "
+         "--hpxmap   SPASS_pysm_s1d1_10arcmin.fits    "
+         "--beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/dust "
+         "--method Contextual-Attention  --overwrite --debug --pol  --skip_temperature  --Ninpaints 1" )
+
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )
 	parser.add_argument("--stackfile", help='path to the directory with stacked masked maps')
@@ -187,5 +195,5 @@ if __name__=="__main__":
 
 
 """
-mpirun -np 1  python /Users/peppe/work/picasso/picasso/inpaint_mpi.py  --stackfile "/Users/peppe/work/inpainting/stacks/synch/singlestacks/"  --ptsourcefile "/Users/peppe/work/inpainting/FG_inpainting/ptsrcS3_2019-08-02.dat"  --outdir outputs/synch/  --outputmap "/Users/peppe/work/heavy_maps/test.fits" --hpxmap "/Users/peppe/work/heavy_maps/SPASS_pysm_s1d1_10arcmin.fits"  --beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/dust   --method Contextual-Attention  --overwrite --debug --pol  --skip_temperature  --Ninpaints 1
+mpirun -np 1  python /Users/peppe/work/picasso/picasso/inpaint_mpi.py
 """

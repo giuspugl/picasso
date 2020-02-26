@@ -47,6 +47,7 @@ def tp2rd(tht,phi):
 
 
 def set_header(ra,dec, size_patch ,Npix=128 ):
+    # size_patch =[deg/pixel]
     hdr = fits.Header()
     hdr.set('SIMPLE' , 'T')
     hdr.set('BITPIX' , -32)
@@ -72,7 +73,10 @@ def set_header(ra,dec, size_patch ,Npix=128 ):
 def MinMaxRescale(x,a=0,b=1):
     xresc = (b-a)*(x- x.min() )/(x.max() - x.min() ) +a
     return xresc
-def return_intersection(hist_1, hist_2):
-    minima = np.minimum(hist_1, hist_2)
-    intersection = np.true_divide(np.sum(minima), np.sum(hist_2))
+def StandardizeFeatures(x) :
+    return (x - x.mean()) /(x.std()  )
+
+def return_intersection(hist_test, hist_true ):
+    minima = np.minimum(hist_test, hist_true )
+    intersection = np.true_divide(np.sum(minima), np.sum(hist_true ))
     return intersection

@@ -88,7 +88,7 @@ class   DeepPrior ():
         verbose = False, meshgrid=True   ):
         self.rdseed=123456789
         self.verbose=verbose
-        self.meshgrid=meshgrid 
+        self.meshgrid=meshgrid
         X_input =  Input(   input_shape )
         nu=nd[::-1]
         kd =[3] * len(nu)
@@ -132,15 +132,15 @@ class   DeepPrior ():
         return pred
 
     def setup_input(self,fname_masked    ):
-        
+
         maskdmap=np.load(fname_masked)
-        if self.meshgrid : 
+        if self.meshgrid :
             x = np.linspace(0, 1, maskdmap.shape[0])
             y = np.linspace(0, 1, maskdmap.shape[1])
             xv, yv = np.meshgrid(x, y)
             up =  (xv-yv  +1)/2
             down =  (xv+yv  )/2
-            
+
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
         
         a=0; b=1
@@ -152,16 +152,16 @@ class   DeepPrior ():
         maskdmap = np.expand_dims(np.expand_dims( maskdmap, axis=0), axis=-1)
         self.mask =np.expand_dims(np.expand_dims( holemask, axis=0), axis=-1)
         randstate= np.random.RandomState(self.rdseed)
-        noisemap =     randstate.uniform(low=a, high=b ,  size=maskdmap.shape )  # see the Deep prior paper for the choice b=1./10 
-        
+        noisemap =     randstate.uniform(low=a, high=b ,  size=maskdmap.shape )  # see the Deep prior paper for the choice b=1./10
+
         self.min = minval;  self.max = maxval
-        if self.meshgrid : 
-            self.Z =np.expand_dims(np.array([xv,yv, up,down] ).T,0)            
-            self.X = maskdmap; 
+        if self.meshgrid :
+            self.Z =np.expand_dims(np.array([xv,yv, up,down] ).T,0)
+            self.X = maskdmap;
         else:
             randstate= np.random.RandomState(self.rdseed)
-            noisemap =     randstate.uniform(low=a, high=b/10  ,  size=maskdmap.shape ) 
-            self.X = maskdmap; 
+            noisemap =     randstate.uniform(low=a, high=b/10  ,  size=maskdmap.shape )
+            self.X = maskdmap;
             self.Z = noisemap ;
         pass
 
