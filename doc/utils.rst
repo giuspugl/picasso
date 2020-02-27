@@ -10,8 +10,8 @@ Minkowski Functionals Module
   :undoc-members:
   :show-inheritance:
 
-Utilities functions
-===================
+Utilities Module
+================
 .. automodule:: picasso.utils.utils
   :members:
   :undoc-members:

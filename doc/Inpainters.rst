@@ -1,9 +1,13 @@
-Inpainters  contents
---------------------
+Inpainters Module
+-----------------
 
 
-Inpainter Interface
-===================
+Interface
+=========
+
+
+
+
 .. automodule:: picasso.inpainters.interfaces
   :members:
   :undoc-members:
@@ -32,16 +36,6 @@ GAN
 
 
 .. automodule:: picasso.inpainters.contextual_attention_gan
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. automodule:: picasso.inpainters.generative_inpainting_model
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. automodule:: picasso.inpainters.generative_inpainting_ops
   :members:
   :undoc-members:
   :show-inheritance:

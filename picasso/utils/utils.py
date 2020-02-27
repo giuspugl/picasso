@@ -18,7 +18,7 @@ import astropy.io.fits as fits
 def h2f(hmap,target_header,coord_in='C'):
     """
     Returns a target square submap from a projected  HEALPIX map, given a WCS header,
-    using :module:`reproject` package
+    using :py:mod:`reproject` package
 
     **Parameters**
 
@@ -38,7 +38,7 @@ def h2f(hmap,target_header,coord_in='C'):
 def f2h(flat,target_header,nside,coord_in='C'):
     """
     Returns a  HEALPIX map projected  and the footprint of a flat one , given a WCS header,
-    using :module:`reproject` package
+    using :py:mod:`reproject` package
 
     **Parameters**
 

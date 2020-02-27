@@ -17,7 +17,7 @@ NAME = "picasso"
 DESCRIPTION = "Python Inpainter for Cosmological and Astrophysical SOurces "
 URL = 'https://github.com/giuspugl/picasso.git'
 EMAIL = 'gpuglisi@stanford.edu'
-AUTHOR = 'Giuseppe Puglisi, Xiran Bai'
+AUTHOR = 'Giuseppe Puglisi, Xiran Bai, Yuuki Omori'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = '0.0.1'
 

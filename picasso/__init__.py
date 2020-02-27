@@ -9,7 +9,6 @@ Contents:
 
     * inpainters:   inpainting methodologies
     * utils : tools specifically for working with  map projection
-    * scripts:  tools to distribute the inpainting instructions to multiprocesses
 
 """
 

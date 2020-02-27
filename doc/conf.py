@@ -15,6 +15,7 @@ import sys
 #sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('/Users/peppe/work/picasso/picasso/utils'))
+sys.path.insert(0, os.path.abspath('/Users/peppe/work/picasso/picasso'))
 
 
 # -- Project information -----------------------------------------------------
@@ -41,6 +42,7 @@ extensions = [
 
     'sphinx.ext.viewcode'
 ]
+autodoc_mock_imports = ["neuralgym" ,"keras", "tensorflow", "astropy"]
 #'sphinx.ext.autodoc',
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

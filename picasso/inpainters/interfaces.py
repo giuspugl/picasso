@@ -10,8 +10,11 @@
 
 
 
+#import .deep_prior_inpainter as dp
+#import .contextual_attention_gan as ca
+#import .nearest_neighbours_inpainter as nn
 
-from  inpainters  import (
+from inpainters import (
   deep_prior_inpainter as dp ,
   contextual_attention_gan    as ca,
   nearest_neighbours_inpainter as nn
@@ -27,8 +30,8 @@ class HoleInpainter(object) :
 
     def __init__ (self, args , Npix = 128, meshgrid=True ) :
         """
-        Initialize inpainter with the method given in `args.method`.
-        So far the Deep-Prior and GAN architecture are compatible to run on  `128x128` images.
+        Initialize inpainter with the method given in ``args.method``.
+        So far the Deep-Prior and GAN architecture are compatible to run on  ``128x128`` images.
 
 
         """
@@ -76,7 +79,7 @@ class HoleInpainter(object) :
     def DPinpaint(self,reuse ) :
 
         """
-        Set of instructions to inpaint with Deep-Prior
+        Set of instructions to inpaint with :class:`DeepPrior`
         """
         if reuse :
             self.Inpainter.compile (optimizer=self.optimizer)
@@ -89,7 +92,8 @@ class HoleInpainter(object) :
 
     def GANinpaint  (self , reuse  ) :
         """
-        Set of instructions to inpaint with GAN
+        Set of instructions to inpaint with
+        :class:`ContextualAttention`
         """
         p = self.Inpainter.predict( reuse )
         p = self.Inpainter.rescale_back(p )
@@ -98,6 +102,6 @@ class HoleInpainter(object) :
 
     def NNinpaint  (self  ) :
         """
-        Set of instructions to inpaint with Nearest-Neighbours
+        Set of instructions to inpaint with :class:`NearestNeighbours`
         """
         return  self.Inpainter.predict ( )

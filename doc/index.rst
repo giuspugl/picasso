@@ -11,8 +11,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   utils
+
    Inpainters
+
+   utils
 
 Indices and tables
 ==================

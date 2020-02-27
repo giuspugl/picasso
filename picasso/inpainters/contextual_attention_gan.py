@@ -24,11 +24,11 @@ class ContextualAttention(InpaintCAModel) :
     """
     Inpainting with GAN.
 
-    It requires a _pre-trained_ network with weights stored in `modeldir`.
+    It requires a `pre-trained` network with weights stored in ``modeldir``.
     This is a further interface layer   to the Generative inpainting developed by  Jiahui Yu (https://github.com/JiahuiYu/generative_inpainting)
 
     """
-    
+
     def __init__(self, modeldir  = None , verbose=False   ):
         self.checkpoint_dir = modeldir
         self.verbose=verbose
