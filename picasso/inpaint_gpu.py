@@ -43,7 +43,8 @@ from  utils import (
     rd2tp,
 
 )
-
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def main(args):
@@ -80,8 +81,8 @@ def main(args):
         keys = ['T' ]
         inputmap = [hp.read_map( args.hpxmap, verbose=args.debug) ]
     else:
-        raise ValueError (f'Please indicate  what you wanna inpaint'
-                            'with input arguments    --skip-temperature and  --pol'
+        raise ValueError (f'Please indicate  what you wanna inpaint '
+                            'with input arguments    --skip-temperature and  --pol;  '
                             'at least one of them needs to be True, '
                             'they are  {args.skipT} {args.pol}' )
         return
@@ -92,7 +93,7 @@ def main(args):
 
     size_im = {2048: 192.  ,4096 : 64., 1024:384. }
     beam =np.deg2rad( args.beamsize /60.)
-
+    import time
     Inpainter =  HoleInpainter (args , Npix=Npix  )
     reuse = False
     for i in range(Nstacks-args.Ninpaints, Nstacks ):
@@ -109,9 +110,12 @@ def main(args):
             if os.path.exists(outfile ) and not args.overwrite  :
                 print("File exists, skipping")
                 continue
+            s=time.clock()
 
             Inpainter.setup_input( fname  , rdseed =(i +129292) )
             predicted = Inpainter(reuse=reuse  )
+            e= time.clock()
+            print(e-s)
             np.save(outfile , predicted)
 
             if args.reproject_to_healpix:

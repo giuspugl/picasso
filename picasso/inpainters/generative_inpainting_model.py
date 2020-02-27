@@ -31,11 +31,17 @@ from .generative_inpainting_ops import (
                 resize_mask_like, contextual_attention
             )
 
+if __name__=='__main__' :
 
-logger = logging.getLogger()
+    logger = logging.getLogger()
 
 
 class InpaintCAModel(Model):
+
+    """
+    Interface class to Generative Inpainting
+    """
+
     def __init__(self):
         super().__init__('InpaintCAModel')
 
@@ -124,6 +130,7 @@ class InpaintCAModel(Model):
         return x_stage1, x_stage2, offset_flow
 
     def build_wgan_local_discriminator(self, x, reuse=False, training=True):
+
         with tf.variable_scope('discriminator_local', reuse=reuse):
             cnum = 64
             x = dis_conv(x, cnum, name='conv1', training=training)

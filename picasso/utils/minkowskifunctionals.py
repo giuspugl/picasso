@@ -1,6 +1,40 @@
+#
+#
+#
+#
+#   date: 2019-08-20
+#   author: GIUSEPPE PUGLISI
+#   python3.6
+#   Copyright (C) 2019   Giuseppe Puglisi    gpuglisi@stanford.edu
+#
+
+
+
 import numpy as np
 
 def estimate_marchingsquare(data , threshold ):
+    """
+    Estimate Minkowski functionals (:math:`V_0, V_1, V_2`) at a given
+    threshold on an image with the technique of  `Marching Squares`, described in Mantz et al 2008.
+
+    **Parameters**
+
+    - ``data`` : {array}
+        2D image (rescaled to :math:`[-1,1]`` )
+    - ``threshold``: {float}
+        threshold value to estimate Minkowski functionals
+
+    **Returns**
+
+    - ``f``: {float}
+        the value of :math:`V_0`
+    - ``u``:{float}
+        the value of :math:`V_1`
+    - ``chi``:{float}
+        the value of :math:`V_2`
+
+    """
+
     width = data.shape[0]
     height= data.shape[1]
     f,u,chi=0 ,0,0
@@ -129,14 +163,36 @@ def estimate_marchingsquare(data , threshold ):
     return f,u, chi
 
 def get_functionals(im , nevals= 32):
+    """
+    Estimate Minkowski functionals (:math:`V_0, V_1, V_2`) on a set of thresholds.
+
+    **Parameters**
+
+    - ``data`` : {array}
+        2D image (rescaled to [-1,1] )
+    - ``nevals``: {int}
+        number of thresholds where to evaluate minkowski
+
+    **Returns**
+
+    - ``x``: {array}
+        array of thresholds
+    - ``f`` :{array}
+        the value of :math:`V_0( x )`
+    - ``u``:{array}
+        the value of :math:`V_1(x)`
+    - ``chi``:{array}
+        the value of :math:`V_2(x)`
+
+    """
     vmin =im.min() ; vmax=im.max()
 
-    rhos =  np.linspace( vmin,vmax, nevals)
-    f= np.zeros_like(rhos)
-    u= np.zeros_like(rhos)
-    chi= np.zeros_like(rhos)
+    x =  np.linspace( vmin,vmax, nevals)
+    f= np.zeros_like(x)
+    u= np.zeros_like(x)
+    chi= np.zeros_like(x)
 
-    for k, rho in np.ndenumerate( rhos) :
+    for k, rho in np.ndenumerate( x) :
         f[k], u[k],chi[k]=  estimate_marchingsquare(im, rho )
 
-    return rhos, f,u,chi
+    return x, f,u,chi

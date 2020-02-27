@@ -28,6 +28,10 @@ from generative_inpainting_ops import (
 
 
 def ca_vis(args):
+
+	"""
+	Visualize the contextual attention from the Generative inpainting .
+	"""
     rate = 2
     stride = 1
     grid = rate*stride
@@ -103,4 +107,3 @@ if __name__=="__main__":
 		healpix_map_vis(args)
 	else:
 		print('Please provide the visualization method from flow_map, flat_map, or healpix_map')
-	

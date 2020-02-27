@@ -1,3 +1,16 @@
+#
+#
+#
+#
+#   date: 2019-08-20
+#   author: GIUSEPPE PUGLISI
+#   python3.6
+#   Copyright (C) 2019   Giuseppe Puglisi    gpuglisi@stanford.edu
+#
+
+
+
+
 from  inpainters  import (
   deep_prior_inpainter as dp ,
   contextual_attention_gan    as ca,
@@ -5,10 +18,22 @@ from  inpainters  import (
   )
 
 
-class HoleInpainter() :
+class HoleInpainter(object) :
+
+    """
+    This class provides an interface to the 3 inpainting techniques.
+    One of the key parameters is `args`  importing arguments  input by  the user in the inpainting scripts.
+    """
+
     def __init__ (self, args , Npix = 128, meshgrid=True ) :
+        """
+        Initialize inpainter with the method given in `args.method`.
+        So far the Deep-Prior and GAN architecture are compatible to run on  `128x128` images.
+
+
+        """
         if args.method =='Deep-Prior':
-            
+
             self.Inpainter = dp.DeepPrior ( (Npix, Npix, 4),
                                             verbose = args.debug, meshgrid=meshgrid   )
             self.epochs =args.dp_epochs
@@ -25,6 +50,14 @@ class HoleInpainter() :
         pass
 
     def __call__(self, reuse ) :
+        """
+        Run inpainting,
+
+        **Parameters**
+
+        - `reuse`:{bool}
+            whether to recompile or not the Deep-Prior and GAN  neural network.
+        """
         if self.method== 'Deep-Prior':
             return self.DPinpaint(reuse=reuse )
         elif self.method== 'Contextual-Attention':
@@ -33,13 +66,21 @@ class HoleInpainter() :
             return self.NNinpaint()
 
     def setup_input(self , fname, rdseed=None  ) :
+        """
+        Pre-process the  flat map  by renormalizing and reshaping  it
+        as it required by the inpainting method
+        """
         self.Inpainter.rdseed = rdseed
         return   self.Inpainter.setup_input( fname )
 
     def DPinpaint(self,reuse ) :
+
+        """
+        Set of instructions to inpaint with Deep-Prior
+        """
         if reuse :
             self.Inpainter.compile (optimizer=self.optimizer)
-            
+
         self.Inpainter.train(self.Inpainter.Z , self.Inpainter.X , epochs=self.epochs )
         self.Inpainter.evaluate(self.Inpainter.Z,self.Inpainter.X)
         p =   self.Inpainter.predict()[0,:,:,0]
@@ -47,11 +88,16 @@ class HoleInpainter() :
         return p
 
     def GANinpaint  (self , reuse  ) :
-
+        """
+        Set of instructions to inpaint with GAN
+        """
         p = self.Inpainter.predict( reuse )
         p = self.Inpainter.rescale_back(p )
 
         return  p
 
     def NNinpaint  (self  ) :
-         return  self.Inpainter.predict ( )
+        """
+        Set of instructions to inpaint with Nearest-Neighbours
+        """
+        return  self.Inpainter.predict ( )

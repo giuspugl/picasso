@@ -23,8 +23,12 @@ from neuralgym.ops.layers import *
 from neuralgym.ops.loss_ops import *
 from neuralgym.ops.summary_ops import *
 
+if __name__=='__main__' :
+    logger = logging.getLogger()
+    COLORWHEEL = make_color_wheel()
 
-logger = logging.getLogger()
+
+
 np.random.seed(2018)
 
 
@@ -440,7 +444,7 @@ def make_color_wheel():
     return colorwheel
 
 
-COLORWHEEL = make_color_wheel()
+
 
 
 def compute_color(u,v):

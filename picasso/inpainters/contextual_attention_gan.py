@@ -20,6 +20,15 @@ from .generative_inpainting_model import InpaintCAModel
 from utils import MinMaxRescale
 
 class ContextualAttention(InpaintCAModel) :
+
+    """
+    Inpainting with GAN.
+
+    It requires a _pre-trained_ network with weights stored in `modeldir`.
+    This is a further interface layer   to the Generative inpainting developed by  Jiahui Yu (https://github.com/JiahuiYu/generative_inpainting)
+
+    """
+    
     def __init__(self, modeldir  = None , verbose=False   ):
         self.checkpoint_dir = modeldir
         self.verbose=verbose
@@ -27,7 +36,9 @@ class ContextualAttention(InpaintCAModel) :
         super(ContextualAttention , self).__init__()
 
     def setup_input(self,fname_masked     ):
-        
+        """
+        Pre-process the  map to be inpainted with GAN.
+        """
         fname_whole= fname_masked.split('_masked')[0] +fname_masked.split('_masked')[1]
         maskdmap=np.load(fname_masked)
         holemask = np.ma.masked_not_equal(maskdmap,0) .mask
@@ -43,6 +54,9 @@ class ContextualAttention(InpaintCAModel) :
         pass
 
     def rescale_back (self, v ) :
+        """
+        MinMax rescale to the map to the physical units
+        """
         return MinMaxRescale(v, a= self.min , b = self.max )
 
 
@@ -90,7 +104,9 @@ class ContextualAttention(InpaintCAModel) :
         return outarray
 
     def predict (self,   reuse  ):
-
+        """
+        Inpainting with GAN
+        """
         sess_config = tf.ConfigProto()
         sess_config.gpu_options.allow_growth = True
         with tf.Session(config=sess_config) as sess:

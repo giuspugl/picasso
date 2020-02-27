@@ -16,14 +16,42 @@ import astropy.io.fits as fits
 
 
 def h2f(hmap,target_header,coord_in='C'):
-    #project healpix -> flatsky
+    """
+    Returns a target square submap from a projected  HEALPIX map, given a WCS header,
+    using :module:`reproject` package
+
+    **Parameters**
+
+    - ``hmap`` : {array}
+        healpix map
+    - ``target_header``:
+        header defined from :func:`set_header`
+
+
+
+    """
     pr,footprint = reproject.reproject_from_healpix(
     (hmap, coord_in), target_header, shape_out=(500,500),
     order='nearest-neighbor', nested=False)
     return pr
 
 def f2h(flat,target_header,nside,coord_in='C'):
-    #project flatsky->healpix
+    """
+    Returns a  HEALPIX map projected  and the footprint of a flat one , given a WCS header,
+    using :module:`reproject` package
+
+    **Parameters**
+
+    - ``flat`` : {2D array}
+        flat  map
+    - ``target_header``:
+        header defined from :func:`set_header`
+    - ``nside``:{int}
+        nside of output healpix map
+
+
+    """
+
     pr,footprint = reproject.reproject_to_healpix(
     (flat, target_header),coord_system_out='C', nside=nside ,
     order='nearest-neighbor', nested=False)
@@ -31,7 +59,7 @@ def f2h(flat,target_header,nside,coord_in='C'):
 
 def rd2tp(ra,dec):
     """
-    Convert ra,dec -> tht,phi
+    Convert ``ra,dec -> theta,phi``
     """
     tht = (-dec+90.0)/180.0*np.pi
     phi = ra/180.0*np.pi
@@ -39,15 +67,29 @@ def rd2tp(ra,dec):
 
 def tp2rd(tht,phi):
     """
-    Convert tht,phi -> ra,dec
+    Convert ``theta,phi -> ra,dec``
     """
     ra  = phi/np.pi*180.0
     dec = -1*(tht/np.pi*180.0-90.0)
     return ra,dec
 
 
-def set_header(ra,dec, size_patch ,Npix=128 ):
-    # size_patch =[deg/pixel]
+def set_header(ra,dec, pixelsize ,Npix=128 ):
+    """
+    Sets the WCS header needed to perform the projection with :func:`h2f` and :func:`f2h`.
+
+    **Parameters**
+
+    - ``ra,dec`` : {float}
+        coordinates of the center of the patch
+    - ``pixelsize``:{float}
+        the size of the pixels of the reprojected flat map  in units of ``deg/pixel``
+    - ``Npix``:{int}
+        number of pixels in one side of the flat map
+
+
+    """
+
     hdr = fits.Header()
     hdr.set('SIMPLE' , 'T')
     hdr.set('BITPIX' , -32)
@@ -58,8 +100,8 @@ def set_header(ra,dec, size_patch ,Npix=128 ):
     hdr.set('CRVAL2' ,  dec)
     hdr.set('CRPIX1' ,  Npix/2. +.5)
     hdr.set('CRPIX2' ,  Npix/2. +.5 )
-    hdr.set('CD1_1'  , size_patch )
-    hdr.set('CD2_2'  , -size_patch )
+    hdr.set('CD1_1'  , pixelsize )
+    hdr.set('CD2_2'  , -pixelsize )
     hdr.set('CD2_1'  ,  0.0000000)
     hdr.set('CD1_2'  , -0.0000000)
     hdr.set('CTYPE1'  , 'RA---ZEA')
@@ -71,12 +113,22 @@ def set_header(ra,dec, size_patch ,Npix=128 ):
 
 
 def MinMaxRescale(x,a=0,b=1):
+    """
+    Performs  a MinMax Rescaling on an array `x` to a generic range :math:`[a,b]`.
+    """
     xresc = (b-a)*(x- x.min() )/(x.max() - x.min() ) +a
     return xresc
 def StandardizeFeatures(x) :
+    """
+    Standardizes  an array `x` to have average ``0``, and std. deviation ``1`` .
+    """
     return (x - x.mean()) /(x.std()  )
 
 def return_intersection(hist_test, hist_true ):
+    """
+    Estimate the intersection between two histograms.
+    """
+
     minima = np.minimum(hist_test, hist_true )
     intersection = np.true_divide(np.sum(minima), np.sum(hist_true ))
     return intersection

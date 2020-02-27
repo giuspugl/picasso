@@ -11,7 +11,19 @@ import numpy as np
 
 
 class NearestNeighbours():
+    """
+    Nearest-neighbours inpainting by diffusing the average of the nearest pixel values.
+
+    Inpainting can be performed on  a generic location in the map.
+    It is performed in a loop and it  is stopped when the inpainted array
+    in two subsequent iterations is essentially the same for
+    a given tolerance threshold ``tol``.
+    Default tolerance is the one set from numpy.allclose, ``1e-8``.
+    """
+
+
     def __init__ (self, Npix =128 ,   verbose = False ,  tol=1e-8  ) :
+
         self.verbose=  verbose
         self.Npix =Npix
         self.tol = tol
@@ -19,19 +31,23 @@ class NearestNeighbours():
 
 
     def setup_input (self, fname_masked  )   :
+        """
+        Setup the the masked image  to be inpainted and the mask
+
+        **Parameters**
+
+        - ``fname_masked``:{string}
+            loading ``.npy`` file of the masked image
+
+        """
+
         self.X =np.load(fname_masked)
         self.mask = np.int_ ( np.ma.masked_not_equal(self.X,0) .mask )
         pass
 
     def predict (self   ):
         """
-        Nearest-neighbours inpaint can now inpaint
-        pixels at the border of the image.
-
-        Inpainting loop is stopped when the inpainted array
-        in two subsequent iterations is essentially the same with
-        a given tolerance threshold `tol`.
-        Default tolerance is the one set from numpy.allclose, `1e-8`.
+        Inpainting  the map with Nearest-Neighbours .
         """
 
         mask_pos = np.where(self.mask ==0)

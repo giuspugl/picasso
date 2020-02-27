@@ -19,17 +19,35 @@ from keras.layers import (
         Dense ,Flatten,Reshape, ZeroPadding2D ,
         LeakyReLU,Masking
 )
-import numpy as np
+
 from keras.models import Model
 from keras.initializers import glorot_uniform
 from keras.optimizers import RMSprop, Adam
+import numpy as np
+
 
 from utils import MinMaxRescale
 
 class   DeepPrior ():
+    """
+    Inpainting class interface for Deep-Prior
+    """
 
     def upsampling_block(self, X, f, filters, stage, block ):
+        """
+        Implementation of the up-sampling  block
 
+        Arguments:
+        X -- input tensor of shape (m, n_H_prev, n_W_prev, n_C_prev)
+        f -- integer, specifying the shape of the middle CONV's window for the main path
+        filters -- integer, defining the number of filters in the CONV layers of the main path
+        stage -- integer, used to name the layers, depending on their position in the network
+        block -- string/character, used to name the layers, depending on their position in the network
+
+
+        Returns:
+        X -- output of the convolutional block, tensor of shape (n_H, n_W, n_C)
+        """
         conv_id =   block + str(stage)
         X = Conv2D( filters  ,  (f,f)  , padding='same',
                kernel_initializer = glorot_uniform(seed=0), name='conv1_'+conv_id)(X)
@@ -71,11 +89,12 @@ class   DeepPrior ():
         return X
 
     def myloss(self, y_true,y_pred ):
+
         Kmask = K.not_equal(y_true,0 )
         y1= tf.boolean_mask(y_true,Kmask)
         y2= tf.boolean_mask(y_pred,Kmask)
-        #return K.sum(K.sqrt(K.square(   y2  -y1    )))  # l1
         return K.sqrt(K.sum(K.square(   y2  -y1    ), axis=-1)) /K.sqrt(K.sum(K.square(   y1 ), axis=-1))
+
     def my_accuracy (self,  y_true ,y_pred ):
         Kmask = K.not_equal(y_true,0 )
         y1= tf.boolean_mask(y_true,Kmask)
@@ -86,6 +105,12 @@ class   DeepPrior ():
         input_shape,
         nd =[16,32,64,128  ,128  ,128],
         verbose = False, meshgrid=True   ):
+
+
+        """
+        Initialize the Deep -Prior network with parameters reported in the prescription of
+         `Deep-Prior Supplement Material <https://box.skoltech.ru/index.php/s/ib52BOoV58ztuPM#pdfviewer>`_
+        """
         self.rdseed=123456789
         self.verbose=verbose
         self.meshgrid=meshgrid
@@ -126,13 +151,23 @@ class   DeepPrior ():
             print ("Test Accuracy = " + str(self.preds[1]))
 
     def predict(self,) :
+        """
+        Inpainting with Deep -Prior
+        """
         pred= self.model.predict(self.Z)
         pred = self.X *np.int_ (self.mask) + pred * (1-np.int_( self.mask ) )
 
         return pred
 
     def setup_input(self,fname_masked    ):
+        """
+        Preprocessing the corrupted image and setting up the generative images.
+        By default deep-prior will generate pixel values starting from an image with
+        uniformly random  distributed pixels (in :math:`[0,1/10]`).
+        Otherwise if `meshgrid==True `, Generator is a set of 4 images, i.e.  a upward, downward, leftward and rightward diagonal  gradients_summary.
+        This mitigates the gridding pattern injected in the reconstruction area.
 
+        """
         maskdmap=np.load(fname_masked)
         if self.meshgrid :
             x = np.linspace(0, 1, maskdmap.shape[0])
@@ -142,7 +177,7 @@ class   DeepPrior ():
             down =  (xv+yv  )/2
 
         holemask = np.ma.masked_not_equal(maskdmap,0  ) .mask
-        
+
         a=0; b=1
         maxval = maskdmap[holemask].max() ; minval = maskdmap[holemask].min()
         maskdmap =MinMaxRescale(maskdmap,a =a ,b=b )
@@ -166,4 +201,7 @@ class   DeepPrior ():
         pass
 
     def rescale_back (self, v ) :
+        """
+        rescale inpainted map to physical units .
+        """
         return MinMaxRescale(v, a= self.min , b = self.max )
