@@ -3,9 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-PICASSO
-########
 
+*******
+PICASSO
+*******
 
 
 .. image:: 
@@ -30,7 +31,20 @@ For further details see `Puglisi et al. (2020)  <>`_.
 
 So far,  ``PICASSO`` has been tested on  inpainting maps of   two   polarized emissions in the microwave regime: Synchrotron and Thermal Dust. GAN weights have been derived by training on  images of each emission and  can be found at : `GAN weights <https://drive.google.com/drive/folders/1NtJ-amLBXNjbvurMtbgptPdYmpp97do7>`_. 
 
-Scripts are provided to the user in order to perform: 
+
+Install
+#######
+
+.. code-block:: bash
+
+    git clone https://github.com/giuspugl/picasso 
+    cd picasso 
+    python setup.py install 
+
+Usage
+#####
+
+Scripts are provided to the user in order to perform:
 
 - projection from full sky HEALPIX maps to flat thumbnails images
 - inpainting on GPUs `image_stacker   <https://github.com/giuspugl/picasso/blob/devel/picasso/image_stacker_mpi.py>`_
@@ -38,13 +52,21 @@ Scripts are provided to the user in order to perform:
 - projection from flat images to HEALPIX  `inpaint_mpi <https://github.com/giuspugl/picasso/blob/devel/picasso/inpaint_mpi.py>`_
 
 
-.. image:: 
+.. image::
         imagecrop.png
         :scale: 60%
 
 *An example of a crop images (leftmost panel) inpainted with the three methods in* ``PICASSO``.
 
-Contents:
+Support
+#######
+
+If you encounter any difficulty in installing and using the code or you think
+you found a bug, please `open an issue
+<https://github.com/giuspugl/picasso/issues>`_.
+
+Contents
+########
 
 .. toctree::
    :maxdepth: 2
@@ -53,6 +75,7 @@ Contents:
    Inpainters
 
    utils
+
 
 Indices and tables
 ==================
