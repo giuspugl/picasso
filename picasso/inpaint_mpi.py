@@ -41,7 +41,7 @@ import warnings; warnings.simplefilter('ignore')
 warnings.simplefilter('ignore', DeprecationWarning)
 
 from utils import utils
-
+import glob
 from  utils import (
     set_header,
     f2h,
@@ -87,16 +87,16 @@ def main(args):
     if args.Ninpaints ==0: args.Ninpaints=Nstacks
     if args.pol and args.skipT  :
         if rank ==0  :print ("Skipping T, inpainting Q, U ")
-        keys = ['Q', 'U']
+        keys =  'QU'
         inputmap = hp.read_map(args.hpxmap  ,field=[1,2] ,verbose=args.debug)
     elif args.pol and not args.skipT :
-        keys = ['T', 'Q', 'U']
+        keys = 'TQU'
         if rank ==0  :  print ("Inpainting T,Q,U")
         inputmap = hp.read_map(args.hpxmap  ,field=[0,1,2] ,verbose=args.debug)
 
     elif not args.skipT and not args.pol :
         if rank ==0  :  print ("Inpainting T ")
-        keys = ['T' ]
+        keys = 'T'
         inputmap = [hp.read_map( args.hpxmap, verbose=args.debug) ]
     else:
         raise ValueError (f'Please indicate  what you wanna inpaint'
@@ -119,18 +119,20 @@ def main(args):
     Inpainter =  HoleInpainter (args , Npix=Npix  )
 
     reuse = False
-    for i in range(Nstacks-args.Ninpaints,Nstacks ):
+    files=  glob.glob(f"{args.stackfile}/{keys[0]}*_masked.npy")[:args.Ninpaints]
+    for i, f in enumerate ( files):
+        ra , dec =np.float_(f.split(f'{keys[0]}_')[1].split('_')[:2])
 
         if args.reproject_to_healpix:
             sizepatch = size_im[nside]*1. /Npix/60.
-            header       = set_header(ra[i],dec[i], sizepatch )
-            tht,phi      = rd2tp(ra[i],dec[i])
+            header       = set_header(ra,dec, sizepatch )
+            tht,phi      = rd2tp(ra,dec)
             vec          = hp.ang2vec( theta = tht,phi =phi )
             pixs         = hp.query_disc(nside,vec,3* beam)
             mask [pixs]  = 1.
-        for k,j  in  zip(keys, range(len(keys)) ) :
-            fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-            outfile =args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i])
+        for j,k  in  enumerate(keys ) :
+            fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra,dec )
+            outfile =args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra,dec)
             if os.path.exists(outfile ) and not args.overwrite  :
                 print("File exists, skipping")
                 continue
@@ -168,7 +170,7 @@ if __name__=="__main__":
         "--outdir outputs/synch/   "
         "--outputmap  test.fits   "
          "--hpxmap   SPASS_pysm_s1d1_10arcmin.fits    "
-         "--beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/dust "
+         "--beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/synch "
          "--method Contextual-Attention  --overwrite --debug --pol  --skip_temperature  --Ninpaints 1" )
 
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
@@ -182,7 +184,7 @@ if __name__=="__main__":
 	parser.add_argument("--skip_temperature",dest ="skipT", action="store_true" , default=False )
 	parser.add_argument('--checkpoint_dir', default='', type=str,help='The directory of tensorflow checkpoint for the ContextualAttention.')
 	parser.add_argument('--deep-prior-epochs',dest='dp_epochs',  type= np.int, default = 2000)
-	parser.add_argument('--Ninpaints' ,   type= np.int, default = 0 )
+	parser.add_argument('--Ninpaints' ,   type= np.int, default = 0  )
 
 	parser.add_argument('--nearest-neighbours-tolerance' , dest = 'nn_tol', type= np.float, default = 1e-8 )
 	parser.add_argument('--overwrite', default=False , action='store_true')

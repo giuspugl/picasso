@@ -12,7 +12,7 @@ import healpy as hp
 import numpy as np
 import argparse
 import os
-
+import glob
 codename = (r"""
 
 8888888b. 8888888 .d8888b.        d8888  .d8888b.   .d8888b.   .d88888b.
@@ -96,26 +96,26 @@ def main(args):
     import time
     Inpainter =  HoleInpainter (args , Npix=Npix  )
     reuse = False
-    for i in range(Nstacks-args.Ninpaints, Nstacks ):
+    files=  glob.glob(f"{args.stackfile}/{keys[0]}*_masked.npy")[:args.Ninpaints]
+
+    for i, f in enumerate ( files):
+        ra , dec =np.float_(f.split(f'{keys[0]}_')[1].split('_')[:2])
+
         if args.reproject_to_healpix:
             sizepatch = size_im[nside]*1. /Npix/60.
-            header       = set_header(ra[i],dec[i], sizepatch )
-            tht,phi      = rd2tp(ra[i],dec[i])
+            header       = set_header(ra,dec, sizepatch )
+            tht,phi      = rd2tp(ra,dec)
             vec          = hp.ang2vec( theta = tht,phi =phi )
             pixs         = hp.query_disc(nside,vec,3* beam)
             mask [pixs]  = 1.
-        for k,j  in  zip(keys, range(len(inputmap)) ) :
-            fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra[i],dec[i] )
-            outfile =args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra[i],dec[i])
+        for j,k  in  enumerate(keys ) :
+            fname = args.stackfile+k+'_{:.5f}_{:.5f}_masked.npy'.format(ra,dec )
+            outfile =args.outdir+args.method +'/'+k+'_{:.5f}_{:.5f}.npy'.format( ra,dec)
             if os.path.exists(outfile ) and not args.overwrite  :
                 print("File exists, skipping")
-                continue
-            s=time.clock()
 
             Inpainter.setup_input( fname  , rdseed =(i +129292) )
             predicted = Inpainter(reuse=reuse  )
-            e= time.clock()
-            print(e-s)
             np.save(outfile , predicted)
 
             if args.reproject_to_healpix:
@@ -137,7 +137,7 @@ if __name__=="__main__":
         "--outdir outputs/synch/   "
         "--outputmap  test.fits   "
          "--hpxmap   SPASS_pysm_s1d1_10arcmin.fits    "
-         "--beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/dust "
+         "--beamsize 10 --deep-prior-epochs 10   --checkpoint_dir  /Users/peppe/work/inpainting/model_logs/synch "
          "--method Contextual-Attention  --overwrite --debug --pol  --skip_temperature  --Ninpaints 1" )
 	parser.add_argument("--hpxmap" , help='path to the healpix map to be stacked, no extension ' )
 	parser.add_argument("--beamsize", help = 'beam size in arcminutes of the input map', type=np.float  )

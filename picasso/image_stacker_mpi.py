@@ -20,7 +20,6 @@ from  utils import (
     h2f,
     set_header,
     rd2tp
-
 )
 
 print(r"""
@@ -88,7 +87,7 @@ def main(args):
 
         tht,phi      = rd2tp(ra[i],dec[i])
         vec          = hp.ang2vec( theta = tht,phi =phi )
-        pixs         = hp.query_disc(nside,vec,3* beam)
+        pixs         = hp.query_disc(nside,vec,18* beam)
         mask[pixs]   = 0
 
         for k,j  in  zip(keys, range(len(inputmap)) ) :
