@@ -27,7 +27,7 @@ Three inpainting techniques are included in ``PICASSO`` and can be divided into 
 1. diffusive-based methods (Nearest-Neighbours)
 2. learning-based methods that rely on training DCNNs to fill the missing pixels with the predictions  learned from a training data-set (Deep-Prior and Generative Adversarial Networks, GAN ).
 
-For further details see `Puglisi et al. (2020)  <>`_.
+For further details see `Puglisi et al. (2020)  <http://arxiv.org/abs/2003.13691>`_.
 
 So far,  ``PICASSO`` has been tested on  inpainting maps of   two   polarized emissions in the microwave regime: Synchrotron and Thermal Dust. GAN weights have been derived by training on  images of each emission and  can be found at : `GAN weights <https://drive.google.com/drive/folders/1NtJ-amLBXNjbvurMtbgptPdYmpp97do7>`_.
 
