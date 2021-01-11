@@ -87,7 +87,7 @@ def main(args):
 
         tht,phi      = rd2tp(ra[i],dec[i])
         vec          = hp.ang2vec( theta = tht,phi =phi )
-        pixs         = hp.query_disc(nside,vec,18* beam)
+        pixs         = hp.query_disc(nside,vec, beam)
         mask[pixs]   = 0
 
         for k,j  in  zip(keys, range(len(inputmap)) ) :
