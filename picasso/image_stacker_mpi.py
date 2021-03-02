@@ -40,7 +40,8 @@ def main(args):
     comm    = MPI.COMM_WORLD
     rank    = comm.Get_rank()
     nprocs  = comm.Get_size()
-
+    
+    args.stackfile+='/'
     try :
         os.makedirs(args.stackfile+ 'singlestacks')
     except  FileExistsError:
